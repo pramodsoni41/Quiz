@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quiz-1 CE-311: Open Channel Flow</title>
+  <title>Class Quiz</title>
   <style>
     :root {
       --bg1:#0b1020;
@@ -161,7 +161,7 @@
 <body>
   <div class="container">
     <section id="setup" class="card">
-      <h1>Quiz-1 CE-311: Open Channel Flow</h1>
+      <h1>Class Quiz</h1>
       <p class="muted">Enter your details and the quiz access code to begin. Questions and answer options are shuffled automatically for each student.</p>
 
       <div class="grid2">
@@ -429,10 +429,10 @@
       });
 
       $('quizNotice').textContent = timedOut
-        ? `Time up. Correct answer: ${q.answers[q.correctIndex]}`
+        ? 'Time up.'
         : correct
-          ? 'Correct.'
-          : `Wrong. Correct answer: ${q.answers[q.correctIndex]}`;
+          ? 'Answer recorded.'
+          : 'Answer recorded.';
 
       setTimeout(() => {
         state.current += 1;
