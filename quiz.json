@@ -1,5 +1,16 @@
 [
   {
+    "question": "The fundamental dimensions of viscosity are",
+    "answers": [
+      "M⁰L²T⁻²",
+      "ML⁻¹T⁻¹",
+      "ML⁻²T⁻²",
+      "MLT⁻²"
+    ],
+    "correctAnswer": 1,
+    "time": 20
+  },
+  {
     "question": "Buckingham’s π theorem is used for",
     "answers": [
       "Dimensional homogeneity",
@@ -7,7 +18,7 @@
       "Dimensional inconsistency",
       "Both A and B"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -18,7 +29,7 @@
       "(Number of variables – number of fundamental dimensions)",
       "Product of variables and dimensions"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -29,7 +40,7 @@
       "L⁻¹T",
       "L²T"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -40,7 +51,7 @@
       "Inertial force to surface tension force",
       "Inertial force to elastic force"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -51,7 +62,7 @@
       "Pressure force to gravity",
       "Elastic force to inertial force"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -62,7 +73,7 @@
       "Inertial to compressibility",
       "Inertial to surface tension"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -73,7 +84,7 @@
       "All corresponding dimensionless numbers are same",
       "Froude number is same"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -84,7 +95,7 @@
       "Equally in all directions",
       "Only downward"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -95,7 +106,7 @@
       "dp/dz = ρ/v",
       "dp/dz = ρu²"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -106,7 +117,7 @@
       "Flow rate",
       "Discharge"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -117,7 +128,7 @@
       "Depends on shape of container",
       "Depends on surface area"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -128,7 +139,7 @@
       "Below centroid",
       "Always at bottom"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -139,7 +150,7 @@
       "Metacenter",
       "Center of gravity"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -150,7 +161,7 @@
       "Linear",
       "Hyperbolic"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -161,7 +172,7 @@
       "Half of average velocity",
       "Four times the average velocity"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -172,7 +183,7 @@
       "√V",
       "1/V"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -183,7 +194,7 @@
       "Q ∝ √Δp",
       "Q ∝ 1/Δp"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -194,7 +205,7 @@
       "Flow through orifices",
       "Compressible flow"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -205,7 +216,7 @@
       "f = 0.079/Re⁰·²⁵",
       "f = 0.316/Re⁰·²⁵"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -216,7 +227,7 @@
       "0.5",
       "4"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -227,7 +238,7 @@
       "Inversely with radius",
       "Constant along radius"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -238,7 +249,7 @@
       "Re > 4000",
       "Re < 500"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -249,7 +260,7 @@
       "Linear law",
       "Exponential law"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -260,7 +271,7 @@
       "Both Re and roughness",
       "Neither Re nor roughness"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -271,7 +282,7 @@
       "1.2",
       "1.1"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -282,7 +293,7 @@
       "√V",
       "1/V"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -293,7 +304,7 @@
       "Turbulent core",
       "Transition zone"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -304,7 +315,7 @@
       "Is not a fluid property but depends on flow",
       "Is same as molecular viscosity"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -315,7 +326,7 @@
       "Remains constant",
       "First increases, then decreases"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -326,7 +337,7 @@
       "Prandtl",
       "Reynolds"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -337,7 +348,7 @@
       "V³",
       "√V"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -348,7 +359,7 @@
       "Pressure drop is constant",
       "Density variation is high"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -359,7 +370,7 @@
       "Logarithmic",
       "Uniform"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -370,7 +381,7 @@
       "Constant",
       "Exponentially"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -381,7 +392,7 @@
       "1.33",
       "1"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -392,7 +403,7 @@
       "Hagen flow",
       "Fully developed turbulent flow"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -403,7 +414,7 @@
       "Zero",
       "Varies linearly"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -414,7 +425,7 @@
       "h⁴",
       "1/h"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -425,7 +436,7 @@
       "Pressure difference",
       "None of these"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -436,7 +447,7 @@
       "Sinusoidal",
       "Uniform"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -447,7 +458,7 @@
       "Perpendicular to plates",
       "Random"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -458,7 +469,7 @@
       "Linear law",
       "Power-law"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -469,7 +480,7 @@
       "Rotational and incompressible",
       "Source/sink type"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -480,7 +491,7 @@
       "Constant",
       "Infinity"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -491,7 +502,7 @@
       "Randomly oriented",
       "Coincident"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -502,7 +513,7 @@
       "Compressible, rotational flow",
       "Any real flow"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -513,7 +524,7 @@
       "Remains same",
       "Becomes negative"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -524,7 +535,7 @@
       "Pressure correction factor",
       "Density correction"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -535,7 +546,7 @@
       "Elevation head",
       "Datum head"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -546,7 +557,7 @@
       "Unsteady motion",
       "Temperature variation"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -557,7 +568,7 @@
       "Compressive and gaseous",
       "Incompressible and frictionless"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -568,7 +579,7 @@
       "Undergoes static deformation",
       "Ceforms continuously only for small shear stresses"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -579,7 +590,7 @@
       "Flow' of all real fluids",
       "Flow' of non-Newtonian fluids only"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -590,7 +601,7 @@
       "Inversely proportional to angular deformation",
       "Inversely proportional to rate of angular deformation"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -601,7 +612,7 @@
       "Fluids decreases with temperature",
       "Fluids increases with temperature"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -612,7 +623,7 @@
       "Dilatant fluid",
       "Thixotropic"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -623,7 +634,7 @@
       "Dilatant fluid",
       "Newtonian plastic"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -634,7 +645,7 @@
       "Has constant viscosity and density",
       "Has viscosity"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -645,7 +656,7 @@
       "At any pressure increases continuously with temperature",
       "Is a constant"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -656,7 +667,7 @@
       "Ideal",
       "Does not form a stable bubble"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -667,7 +678,7 @@
       "Mass density",
       "Bulk modulus of elasticity"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -678,7 +689,7 @@
       "M(-1)LT",
       "MLT(-1)"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -689,7 +700,7 @@
       "Only when there is no shear stress",
       "In all cases of fluid motion"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -700,7 +711,7 @@
       "Remains constant at all points in the fluid",
       "Decreases linearly with depth below the free surface"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -711,7 +722,7 @@
       "30.76",
       "19.58"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -722,7 +733,7 @@
       "Pressure force on a vertical projection of the surface",
       "Weight of the liquid contained between the curved surface and the liquid surface"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -733,7 +744,7 @@
       "Is always below the centre of gravity of the boydy",
       "Is always above the centroid of the displaced volume of liquid"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -744,7 +755,7 @@
       "2.5",
       "1.25"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -755,7 +766,7 @@
       "A weight of liquid equal in magnitude to its own weight",
       "A weight of liquid which depends upon the volume of the container"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -766,7 +777,7 @@
       "Decreases",
       "First increases and then decreases"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -777,7 +788,7 @@
       "Remains the same",
       "Falls"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -788,7 +799,7 @@
       "To remain at the same level of draft",
       "To rise or fall depending on whether it is of wood or steel"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -799,7 +810,7 @@
       "BG = 0",
       "M is above G"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -810,7 +821,7 @@
       "Will be inclined to the horizontal at an angle of tane inverse of (1/g)",
       "Will be inclined to the horizontal at an angle which depends upon the slope of the inclined plane"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -821,7 +832,7 @@
       "A parabola",
       "A vertical line"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -832,7 +843,7 @@
       "On the bottom of the tank is uniform",
       "In any vertical plane is hydrostatic"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -843,7 +854,7 @@
       "Which is normal to the lines of constant stream function",
       "Which is tangential to the velocity vector everywhere at a given instant"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -854,7 +865,7 @@
       "Unsteady, uniform flow",
       "Unsteady, non-uniform flow"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -865,7 +876,7 @@
       "Trace made by a single particle over a period of time",
       "Path traced by continuously injected tracer at a point"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -876,7 +887,7 @@
       "Streamline, streakline and pathline can all be different from each other",
       "None of the above"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -887,7 +898,7 @@
       "Has convective tangential acceleration",
       "Has convective normal as well as tangential accelerations."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -898,7 +909,7 @@
       "Normal convective as well as local acceleration",
       "Normal convective acceleration"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -909,7 +920,7 @@
       "Three-dimensional and steady",
       "Two-dimensional and unsteady"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -920,7 +931,7 @@
       "Newton’s second law",
       "Newton's third law"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -931,7 +942,7 @@
       "The volume in which a control device is situated.",
       "The volume of the fluid controlling device."
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -942,7 +953,7 @@
       "A relation applicable to incompressible fluids only.",
       "A vector relation."
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -953,7 +964,7 @@
       "Equal to the x-component of R",
       "Equal to R minus the friction force"
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -964,7 +975,7 @@
       "In a state of zero stress",
       "In bending stress"
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -975,7 +986,7 @@
       "The specific weight of liquid and depth below the free liquid surface",
       "The specific weight of liquid, depth below the free liquid surface and the shape and size of the bounding container."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -986,7 +997,7 @@
       "The weight of liquid vertically above the curved surface",
       "The product of pressure at centroid and surface area."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -997,7 +1008,7 @@
       "Equal to the weight of liquid displaced",
       "The force necessary to maintain equilibrium of a submerged body."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -1008,7 +1019,7 @@
       "Centroid of the displaced volume of fluid",
       "Centroid of the horizontal projection of the body."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -1019,7 +1030,7 @@
       "Varies inversely as the elevation along any vertical line",
       "Varies as the square of the radial distance"
     ],
-    "correct": 3,
+    "correctAnswer": 3,
     "time": 15
   },
   {
@@ -1030,7 +1041,7 @@
       "Cannot remain at rest under action of any shear force.",
       "Cannot be subjected to shear forces."
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -1041,7 +1052,7 @@
       "Vapour pressure",
       "Compressibility."
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -1052,7 +1063,7 @@
       "Adhesion and cohesion both",
       "Neither adhesion nor cohesion"
     ],
-    "correct": 2,
+    "correctAnswer": 2,
     "time": 15
   },
   {
@@ -1063,7 +1074,7 @@
       "Decreases with an increase in surface tension",
       "Increase with an increase in specific weight."
     ],
-    "correct": 1,
+    "correctAnswer": 1,
     "time": 15
   },
   {
@@ -1074,7 +1085,7 @@
       "Always coincident with the centroid of the area",
       "Sometimes above and sometimes below the centroid of the area."
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   },
   {
@@ -1085,7 +1096,7 @@
       "The motion must be uniform",
       "The velocity must be zero at a boundary."
     ],
-    "correct": 0,
+    "correctAnswer": 0,
     "time": 15
   }
 ]
