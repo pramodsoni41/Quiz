@@ -416,7 +416,17 @@
       })
     });
 
-    return await response.json();
+    const rawText = await response.text();
+    console.log('HTTP status:', response.status);
+    console.log('Raw response:', rawText);
+
+    try {
+      return JSON.parse(rawText);
+    } catch (e) {
+      alert('Server did not return JSON. Check console.');
+      return { status: 'error', raw: rawText };
+    }
+
   } catch (err) {
     console.error('Login validation failed:', err);
     alert('Login validation failed: ' + err.message);
