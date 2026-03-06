@@ -554,26 +554,31 @@ async function validateStudentLogin(regNo, password) {
       return;
     }
 
-    if (loginResult.status !== 'ok') {
-      alert('Login validation failed.');
+    // Accept both backend formats:
+    // 1) {status:"ok"}
+    // 2) {ok:true}
+    if (loginResult.status === 'ok' || loginResult.ok === true) {
+      const raw = await fetchQuestions();
+
+      state.student = {
+        name: loginResult.name || name,
+        regNo,
+        phoneNo
+      };
+
+      state.questions = raw;
+      state.active = prepareQuestions(raw);
+      state.current = 0;
+      state.score = 0;
+      state.responses = [];
+      state.isSubmitting = false;
+
+      showSection('quiz');
+      renderQuestion();
       return;
     }
 
-    const raw = await fetchQuestions();
-    state.student = {
-      name: loginResult.name || name,
-      regNo,
-      phoneNo
-    };
-    state.questions = raw;
-    state.active = prepareQuestions(raw);
-    state.current = 0;
-    state.score = 0;
-    state.responses = [];
-    state.isSubmitting = false;
-
-    showSection('quiz');
-    renderQuestion();
+    alert('Login validation failed.');
   } catch (err) {
     console.error(err);
     alert('Unable to start quiz.');
