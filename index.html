@@ -420,7 +420,7 @@
 		return result;
 
 	  } catch (err) {
-		console.error("Login validation failed:", err);
+		alert('Login validation failed: ' + JSON.stringify(loginResult));;
 		return { status: "error" };
 	  }
 	}
