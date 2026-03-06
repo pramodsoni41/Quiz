@@ -401,7 +401,7 @@
       }, 900);
     }
 
-	async function validateStudentLogin(regNo, password) {
+async function validateStudentLogin(regNo, password) {
   try {
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -410,10 +410,22 @@
       },
       body: JSON.stringify({
         action: 'validateLogin',
-        regNo: regNo,
-        password: password
+        regNo,
+        password
       })
     });
+
+    const rawText = await response.text();
+    console.log('HTTP status:', response.status);
+    console.log('Raw response:', rawText);
+
+    return JSON.parse(rawText);
+  } catch (err) {
+    console.error('Login validation failed:', err);
+    alert('Login validation failed.');
+    return { status: 'error' };
+  }
+}
 
     const rawText = await response.text();
     console.log('HTTP status:', response.status);
