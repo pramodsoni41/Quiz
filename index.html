@@ -227,7 +227,6 @@
             <th>#</th>
             <th>Question</th>
             <th>Your Answer</th>
-            <th>Correct Answer</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -249,7 +248,7 @@
       score: 0,
       responses: []
     };
-
+	const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6Eb8AXOwKg6TNnCUi-_CTPo8kL5K2TGQ6uJAS9cY-MBe_GW-wOcoP1BDtl9hi-dk/exec";
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -405,77 +404,98 @@
     }
 
     function lockAndContinue(selectedIndex, timedOut) {
-      clearInterval(state.timer);
-      const q = state.active[state.current];
-      const answerButtons = [...document.querySelectorAll('.answer')];
-      answerButtons.forEach(b => b.disabled = true);
-      if (answerButtons[q.correctIndex]) answerButtons[q.correctIndex].classList.add('correct');
-      if (selectedIndex >= 0 && selectedIndex !== q.correctIndex && answerButtons[selectedIndex]) {
-        answerButtons[selectedIndex].classList.add('wrong');
-      }
+  clearInterval(state.timer);
+  const q = state.active[state.current];
+  const answerButtons = [...document.querySelectorAll('.answer')];
+  answerButtons.forEach(b => b.disabled = true);
 
-      const correct = selectedIndex === q.correctIndex;
-      if (correct) state.score += 1;
+  const correct = selectedIndex === q.correctIndex;
+  if (correct) state.score += 1;
 
-      state.responses.push({
-        questionNo: state.current + 1,
-        question: q.question,
-        selectedIndex,
-        selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
-        correctIndex: q.correctIndex,
-        correctAnswer: q.answers[q.correctIndex],
-        correct,
-        timedOut
-      });
+  state.responses.push({
+    questionNo: state.current + 1,
+    question: q.question,
+    selectedIndex,
+    selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+    correctIndex: q.correctIndex,
+    correctAnswer: q.answers[q.correctIndex],
+    correct,
+    timedOut
+  });
 
-      $('quizNotice').textContent = timedOut
-        ? 'Time up.'
-        : correct
-          ? 'Answer recorded.'
-          : 'Answer recorded.';
+  $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer recorded.';
 
-      setTimeout(() => {
-        state.current += 1;
-        if (state.current < state.active.length) {
-          renderQuestion();
-        } else {
-          finishQuiz();
-        }
-      }, 900);
+  setTimeout(() => {
+    state.current += 1;
+    if (state.current < state.active.length) {
+      renderQuestion();
+    } else {
+      finishQuiz();
     }
+  }, 900);
+}
 
-    function finishQuiz() {
-      clearInterval(state.timer);
-      const resultObj = {
-        student: state.student,
-        totalQuestions: state.active.length,
-        score: state.score,
-        percentage: Number(((state.score / state.active.length) * 100).toFixed(2)),
-        submittedAt: new Date().toISOString(),
-        responses: state.responses
-      };
-      savePreviousResult(resultObj);
-      $('scoreText').textContent = `${state.score} / ${state.active.length}`;
-      $('resultMeta').textContent = `${state.student.name} | ${state.student.regNo} | ${state.student.phoneNo || 'No phone'} | ${resultObj.percentage}%`;
-      const tbody = $('resultTable');
-      tbody.innerHTML = '';
-      resultObj.responses.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.questionNo}</td>
-          <td>${escapeHtml(r.question)}</td>
-          <td>${escapeHtml(r.selectedAnswer)}</td>
-          <td>${escapeHtml(r.correctAnswer)}</td>
-          <td>${r.correct ? 'Correct' : 'Wrong'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      $('downloadResultBtn').onclick = () => {
-        const safeName = `${state.student.name}_${state.student.regNo}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-        downloadObject(resultObj, `${safeName}_result.json`);
-      };
-      showSection('result');
-    }
+    async function finishQuiz() {
+  clearInterval(state.timer);
+
+  const resultObj = {
+    student: state.student,
+    totalQuestions: state.active.length,
+    score: state.score,
+    percentage: Number(((state.score / state.active.length) * 100).toFixed(2)),
+    submittedAt: new Date().toISOString(),
+    responses: state.responses
+  };
+
+  savePreviousResult(resultObj);
+
+  const sentOk = await sendResultToGoogleSheet(resultObj);
+
+  $('scoreText').textContent = `${state.score} / ${state.active.length}`;
+  $('resultMeta').textContent =
+    `${state.student.name} | ${state.student.regNo} | ${state.student.phoneNo || 'No phone'} | ${resultObj.percentage}%` +
+    (sentOk ? ' | Submitted successfully' : ' | Sheet submission failed');
+
+  const tbody = $('resultTable');
+  tbody.innerHTML = '';
+
+  resultObj.responses.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.questionNo}</td>
+      <td>${escapeHtml(r.question)}</td>
+      <td>${escapeHtml(r.selectedAnswer)}</td>
+      <td>${r.correct ? 'Correct' : 'Wrong'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  $('downloadResultBtn').onclick = () => {
+    const safeName = `${state.student.name}_${state.student.regNo}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    downloadObject(resultObj, `${safeName}_result.json`);
+  };
+
+  showSection('result');
+}
+
+
+async function sendResultToGoogleSheet(resultObj) {
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(resultObj)
+    });
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
 
     function escapeHtml(str) {
       return String(str)
