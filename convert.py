@@ -11,7 +11,7 @@ import pandas as pd
 # ========= SETTINGS =========
 input_file = r"E:/Quiz_Mate/MCQ_FM_ALL.xlsx"
 sheet_name = 0
-output_file = "quiz_mate_questions.json"
+output_file = "quiz.json"
 # ===========================
 
 # Read Excel
