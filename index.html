@@ -420,24 +420,11 @@
 		return result;
 
 	  } catch (err) {
-		alert('Login validation failed: ' + JSON.stringify(loginResult));;
-		return { status: "error" };
-	  }
-	}
-
-		return await response.json();
-	  } catch (err) {
 		console.error('Login validation failed:', err);
+		alert('Login validation failed.');
 		return { status: 'error' };
 	  }
 	}
-
-        return await response.json();
-      } catch (err) {
-        console.error('Login validation failed:', err);
-        return { status: 'error' };
-      }
-    }
 
     async function sendResultToGoogleSheet(resultObj) {
       try {
