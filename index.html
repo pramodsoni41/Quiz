@@ -188,15 +188,12 @@
 
       <div class="grid2" style="margin-top:12px;">
         <div>
-          <label for="defaultTime">Default time per question (seconds)</label>
-          <input id="defaultTime" type="number" min="5" value="15" />
+          <label for="securityCode">Quiz Access Code</label>
+          <input id="securityCode" type="password" placeholder="Enter access code" />
         </div>
         <div>
-          <label for="sourceMode">Question source</label>
-          <select id="sourceMode">
-            <option value="json">quiz.json</option>
-            <option value="csv">quiz.csv</option>
-          </select>
+          <label for="questionCount">Questions to attempt</label>
+          <input id="questionCount" type="number" min="1" value="20" />
         </div>
       </div>
 
@@ -205,9 +202,7 @@
         <button id="downloadBtn" class="secondary hidden">Download Previous Result</button>
       </div>
 
-      <div class="notice">
-        Keep this file as <strong>index.html</strong> in your GitHub repo. Keep questions as either <strong>quiz.json</strong> or <strong>quiz.csv</strong> in the same folder.
-      </div>
+      
     </section>
 
     <section id="quiz" class="card hidden">
@@ -272,18 +267,10 @@
     }
 
     async function fetchQuestions() {
-      const mode = $('sourceMode').value;
-      if (mode === 'json') {
-        const res = await fetch('quiz.json?_=' + Date.now());
-        if (!res.ok) throw new Error('Could not load quiz.json');
-        const data = await res.json();
-        return normalizeJson(data);
-      } else {
-        const res = await fetch('quiz.csv?_=' + Date.now());
-        if (!res.ok) throw new Error('Could not load quiz.csv');
-        const text = await res.text();
-        return parseCsv(text);
-      }
+      const res = await fetch('quiz.json?_=' + Date.now());
+      if (!res.ok) throw new Error('Could not load quiz.json');
+      const data = await res.json();
+      return normalizeJson(data);
     }
 
     function normalizeJson(data) {
@@ -297,7 +284,7 @@
           question: q.question,
           answers: answers,
           correctIndex: Number(correctRaw),
-          time: Number(q.time) || Number($('defaultTime').value) || 15
+          time: Number(q.time) || 15
         };
       });
     }
@@ -318,7 +305,7 @@
           question: cols[idx('question')],
           answers,
           correctIndex: correct,
-          time: Number(cols[idx('time')]) || Number($('defaultTime').value) || 15
+          time: Number(cols[idx('time')]) || 15
         };
       });
     }
@@ -511,8 +498,14 @@
       const name = $('studentName').value.trim();
       const regNo = $('regNo').value.trim();
       const phoneNo = $('phoneNo').value.trim();
+      const code = $('securityCode').value.trim();
+      const REQUIRED_CODE = 'FM2026';
       if (!name || !regNo) {
         alert('Please enter student name and registration number.');
+        return;
+      }
+      if (code !== REQUIRED_CODE) {
+        alert('Invalid quiz access code.');
         return;
       }
       try {
