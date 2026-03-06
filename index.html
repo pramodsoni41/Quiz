@@ -402,7 +402,7 @@
       }, 900);
     }
 
-    async function validateStudentLogin(regNo, password) {
+	async function validateStudentLogin(regNo, password) {
 	  try {
 		const response = await fetch(GOOGLE_SCRIPT_URL, {
 		  method: 'POST',
@@ -415,6 +415,15 @@
 			password: password
 		  })
 		});
+
+		const result = await response.json();
+		return result;
+
+	  } catch (err) {
+		console.error("Login validation failed:", err);
+		return { status: "error" };
+	  }
+	}
 
 		return await response.json();
 	  } catch (err) {
