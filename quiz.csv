@@ -1,0 +1,4 @@
+﻿Question,A,B,C,D,Correct,Time
+Reynolds number represents,Inertia/viscous forces,Pressure/viscous,Gravity/viscous,None,A,20
+Head loss formula,Darcy-Weisbach,Newton law,Hooke law,None,A,15
+Critical flow occurs when,Fr <1,Fr =1,Fr >1,Fr=0,B,15
