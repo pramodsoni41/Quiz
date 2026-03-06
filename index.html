@@ -51,7 +51,7 @@
       color:var(--muted);
       margin-bottom:6px;
     }
-    input, select {
+    input {
       width:100%;
       padding:12px 14px;
       border-radius:12px;
@@ -119,8 +119,6 @@
       min-height:84px;
     }
     .answer:hover { border-color: rgba(96,165,250,0.7); }
-    .answer.correct { outline:3px solid rgba(34,197,94,0.8); }
-    .answer.wrong { outline:3px solid rgba(239,68,68,0.8); }
     .row {
       display:flex;
       gap:12px;
@@ -151,7 +149,6 @@
       font-weight:800;
       color:var(--accent2);
     }
-    .small { font-size:0.9rem; color:var(--muted); }
     @media (max-width: 760px) {
       .grid2, .answers { grid-template-columns:1fr; }
       .qtext { font-size:1.25rem; }
@@ -162,7 +159,7 @@
   <div class="container">
     <section id="setup" class="card">
       <h1>Class Quiz</h1>
-      <p class="muted">Enter your details and the quiz access code to begin. Questions and answer options are shuffled automatically for each student.</p>
+      <p class="muted">Enter your details and login password to begin. Questions and answer options are shuffled automatically for each student.</p>
 
       <div class="grid2">
         <div>
@@ -181,21 +178,19 @@
           <input id="phoneNo" placeholder="Optional" />
         </div>
         <div>
-          <label for="securityCode">Quiz Access Code</label>
-          <input id="securityCode" type="password" placeholder="Enter access code" />
+          <label for="studentPassword">Password</label>
+          <input id="studentPassword" type="password" placeholder="Enter password" />
         </div>
       </div>
 
-      <div class="grid2" style="margin-top:12px;">
-
+      <div class="notice">
+        Marking scheme: +1 for correct, -0.25 for wrong, 0 for unattempted.
       </div>
 
       <div class="row">
         <button id="startBtn">Start Quiz</button>
         <button id="downloadBtn" class="secondary hidden">Download Previous Result</button>
       </div>
-
-      
     </section>
 
     <section id="quiz" class="card hidden">
@@ -207,7 +202,6 @@
       <div class="qtext" id="questionText"></div>
       <div class="answers" id="answersBox"></div>
       <div class="row">
-        <button id="nextBtn" class="secondary hidden">Next</button>
         <button id="finishBtn" class="secondary">Finish Quiz</button>
       </div>
       <div class="notice" id="quizNotice">Select one answer.</div>
@@ -215,7 +209,7 @@
 
     <section id="result" class="card hidden">
       <h2>Quiz Result</h2>
-      <div class="score" id="scoreText">0 / 0</div>
+      <div class="score" id="scoreText">0.00 / 0</div>
       <p class="muted" id="resultMeta"></p>
       <div class="row">
         <button id="downloadResultBtn" class="good">Download Result JSON</button>
@@ -238,6 +232,8 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6Eb8AXOwKg6TNnCUi-_CTPo8kL5K2TGQ6uJAS9cY-MBe_GW-wOcoP1BDtl9hi-dk/exec";
+	
     const state = {
       student: null,
       questions: [],
@@ -246,9 +242,10 @@
       timer: null,
       timeLeft: 0,
       score: 0,
-      responses: []
+      responses: [],
+      isSubmitting: false
     };
-	const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6Eb8AXOwKg6TNnCUi-_CTPo8kL5K2TGQ6uJAS9cY-MBe_GW-wOcoP1BDtl9hi-dk/exec";
+
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -269,9 +266,11 @@
       return data.map((q, idx) => {
         const answers = q.answers || q.options;
         const correctRaw = q.correctAnswer ?? q.answer;
+
         if (!Array.isArray(answers) || answers.length < 2) {
           throw new Error(`Question ${idx + 1} has invalid answers/options`);
         }
+
         return {
           question: q.question,
           answers: answers,
@@ -281,56 +280,12 @@
       });
     }
 
-    function parseCsv(text) {
-      const lines = text.trim().split(/\r?\n/).filter(Boolean);
-      const headers = splitCsvLine(lines[0]).map(h => h.trim().toLowerCase());
-      const rows = lines.slice(1).map(splitCsvLine);
-      const idx = (name) => headers.indexOf(name);
-      const required = ['question','option1','option2','option3','option4','correct'];
-      for (const r of required) {
-        if (idx(r) === -1) throw new Error(`Missing column in CSV: ${r}`);
-      }
-      return rows.map((cols, i) => {
-        const answers = [cols[idx('option1')], cols[idx('option2')], cols[idx('option3')], cols[idx('option4')]];
-        const correct = Number(cols[idx('correct')]) - 1;
-        return {
-          question: cols[idx('question')],
-          answers,
-          correctIndex: correct,
-          time: Number(cols[idx('time')]) || 15
-        };
-      });
-    }
-
-    function splitCsvLine(line) {
-      const out = [];
-      let cur = '';
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') {
-          if (inQuotes && line[i + 1] === '"') {
-            cur += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (ch === ',' && !inQuotes) {
-          out.push(cur);
-          cur = '';
-        } else {
-          cur += ch;
-        }
-      }
-      out.push(cur);
-      return out.map(v => v.trim());
-    }
-
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
         const options = q.answers.map((text, idx) => ({ text, originalIndex: idx }));
         const shuffledOptions = shuffle(options);
         const newCorrect = shuffledOptions.findIndex(o => o.originalIndex === q.correctIndex);
+
         return {
           question: q.question,
           answers: shuffledOptions.map(o => o.text),
@@ -358,13 +313,13 @@
     }
 
     function showSection(id) {
-      ['setup','quiz','result'].forEach(sec => $(sec).classList.add('hidden'));
+      ['setup', 'quiz', 'result'].forEach(sec => $(sec).classList.add('hidden'));
       $(id).classList.remove('hidden');
     }
 
     function paintTimer() {
       $('timerPill').textContent = `${state.timeLeft} s`;
-      $('timerPill').classList.remove('low','zero');
+      $('timerPill').classList.remove('low', 'zero');
       if (state.timeLeft <= 5 && state.timeLeft > 0) $('timerPill').classList.add('low');
       if (state.timeLeft <= 0) $('timerPill').classList.add('zero');
     }
@@ -388,7 +343,7 @@
       $('questionText').textContent = q.question;
       $('answersBox').innerHTML = '';
       $('quizNotice').textContent = 'Select one answer.';
-      $('nextBtn').classList.add('hidden');
+      $('finishBtn').disabled = false;
 
       q.answers.forEach((ans, idx) => {
         const btn = document.createElement('button');
@@ -404,98 +359,144 @@
     }
 
     function lockAndContinue(selectedIndex, timedOut) {
-  clearInterval(state.timer);
-  const q = state.active[state.current];
-  const answerButtons = [...document.querySelectorAll('.answer')];
-  answerButtons.forEach(b => b.disabled = true);
+      if (state.isSubmitting) return;
 
-  const correct = selectedIndex === q.correctIndex;
-  if (correct) state.score += 1;
+      clearInterval(state.timer);
+      const q = state.active[state.current];
+      const answerButtons = [...document.querySelectorAll('.answer')];
+      answerButtons.forEach(b => b.disabled = true);
+      $('finishBtn').disabled = true;
 
-  state.responses.push({
-    questionNo: state.current + 1,
-    question: q.question,
-    selectedIndex,
-    selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
-    correctIndex: q.correctIndex,
-    correctAnswer: q.answers[q.correctIndex],
-    correct,
-    timedOut
-  });
+      const correct = selectedIndex === q.correctIndex;
 
-  $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer recorded.';
+      if (selectedIndex === -1) {
+        // no mark change
+      } else if (correct) {
+        state.score += 1;
+      } else {
+        state.score -= 0.25;
+      }
 
-  setTimeout(() => {
-    state.current += 1;
-    if (state.current < state.active.length) {
-      renderQuestion();
-    } else {
-      finishQuiz();
+      state.responses.push({
+        questionNo: state.current + 1,
+        question: q.question,
+        selectedIndex,
+        selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+        correctIndex: q.correctIndex,
+        correctAnswer: q.answers[q.correctIndex],
+        correct,
+        timedOut
+      });
+
+      $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer recorded.';
+
+      setTimeout(() => {
+        if (state.isSubmitting) return;
+
+        state.current += 1;
+        if (state.current < state.active.length) {
+          renderQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, 900);
     }
-  }, 900);
-}
+
+    async function validateStudentLogin(regNo, password) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: 'validateLogin',
+            regNo: regNo,
+            password: password
+          })
+        });
+
+        return await response.json();
+      } catch (err) {
+        console.error('Login validation failed:', err);
+        return { status: 'error' };
+      }
+    }
+
+    async function sendResultToGoogleSheet(resultObj) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: 'submitQuiz',
+            ...resultObj
+          })
+        });
+
+        return await response.json();
+      } catch (err) {
+        console.error('Failed to send result to Google Sheet:', err);
+        return { status: 'error' };
+      }
+    }
 
     async function finishQuiz() {
-  clearInterval(state.timer);
+      if (state.isSubmitting) return;
+      state.isSubmitting = true;
 
-  const resultObj = {
-    student: state.student,
-    totalQuestions: state.active.length,
-    score: state.score,
-    percentage: Number(((state.score / state.active.length) * 100).toFixed(2)),
-    submittedAt: new Date().toISOString(),
-    responses: state.responses
-  };
+      clearInterval(state.timer);
+      $('finishBtn').disabled = true;
 
-  savePreviousResult(resultObj);
+      const resultObj = {
+        student: state.student,
+        totalQuestions: state.active.length,
+        score: Number(state.score.toFixed(2)),
+        percentage: Number(((state.score / state.active.length) * 100).toFixed(2)),
+        submittedAt: new Date().toISOString(),
+        responses: state.responses
+      };
 
-  const sentOk = await sendResultToGoogleSheet(resultObj);
+      savePreviousResult(resultObj);
 
-  $('scoreText').textContent = `${state.score} / ${state.active.length}`;
-  $('resultMeta').textContent =
-    `${state.student.name} | ${state.student.regNo} | ${state.student.phoneNo || 'No phone'} | ${resultObj.percentage}%` +
-    (sentOk ? ' | Submitted successfully' : ' | Sheet submission failed');
+      const submitResult = await sendResultToGoogleSheet(resultObj);
 
-  const tbody = $('resultTable');
-  tbody.innerHTML = '';
+      $('scoreText').textContent = `${resultObj.score.toFixed(2)} / ${state.active.length}`;
+      $('resultMeta').textContent =
+        `${state.student.name} | ${state.student.regNo} | ${state.student.phoneNo || 'No phone'} | ${resultObj.percentage}%` +
+        (
+          submitResult.status === 'submitted'
+            ? ' | Submitted successfully'
+            : submitResult.status === 'duplicate'
+              ? ' | Duplicate response not accepted'
+              : submitResult.status === 'invalidRegNo'
+                ? ' | Invalid registration number'
+                : ' | Submission issue'
+        );
 
-  resultObj.responses.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.questionNo}</td>
-      <td>${escapeHtml(r.question)}</td>
-      <td>${escapeHtml(r.selectedAnswer)}</td>
-      <td>${r.correct ? 'Correct' : 'Wrong'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+      const tbody = $('resultTable');
+      tbody.innerHTML = '';
 
-  $('downloadResultBtn').onclick = () => {
-    const safeName = `${state.student.name}_${state.student.regNo}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-    downloadObject(resultObj, `${safeName}_result.json`);
-  };
+      resultObj.responses.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.questionNo}</td>
+          <td>${escapeHtml(r.question)}</td>
+          <td>${escapeHtml(r.selectedAnswer)}</td>
+          <td>${r.correct ? 'Correct' : (r.selectedIndex === -1 ? 'Unattempted' : 'Wrong')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-  showSection('result');
-}
+      $('downloadResultBtn').onclick = () => {
+        const safeName = `${state.student.name}_${state.student.regNo}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+        downloadObject(resultObj, `${safeName}_result.json`);
+      };
 
-
-async function sendResultToGoogleSheet(resultObj) {
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify(resultObj)
-    });
-    return true;
-  } catch (err) {
-    console.error('Failed to send result to Google Sheet:', err);
-    return false;
-  }
-}
-
+      showSection('result');
+    }
 
     function escapeHtml(str) {
       return String(str)
@@ -510,17 +511,31 @@ async function sendResultToGoogleSheet(resultObj) {
       const name = $('studentName').value.trim();
       const regNo = $('regNo').value.trim();
       const phoneNo = $('phoneNo').value.trim();
-      const code = $('securityCode').value.trim();
-      const REQUIRED_CODE = 'FM2026';
-      if (!name || !regNo) {
-        alert('Please enter student name and registration number.');
+      const password = $('studentPassword').value.trim();
+
+      if (!name || !regNo || !password) {
+        alert('Please enter name, registration number, and password.');
         return;
       }
-      if (code !== REQUIRED_CODE) {
-        alert('Invalid quiz access code.');
-        return;
-      }
+
       try {
+        const loginResult = await validateStudentLogin(regNo, password);
+
+        if (loginResult.status === 'invalid') {
+          alert('Invalid registration number or password.');
+          return;
+        }
+
+        if (loginResult.status === 'used') {
+          alert('This registration number has already been used.');
+          return;
+        }
+
+        if (loginResult.status !== 'ok') {
+          alert('Login validation failed.');
+          return;
+        }
+
         const raw = await fetchQuestions();
         state.student = { name, regNo, phoneNo };
         state.questions = raw;
@@ -528,15 +543,19 @@ async function sendResultToGoogleSheet(resultObj) {
         state.current = 0;
         state.score = 0;
         state.responses = [];
+        state.isSubmitting = false;
+
         showSection('quiz');
         renderQuestion();
       } catch (err) {
-        alert(err.message);
+        alert('Unable to start quiz.');
+        console.error(err);
       }
     };
 
     $('finishBtn').onclick = finishQuiz;
     $('restartBtn').onclick = () => location.reload();
+
     $('downloadBtn').onclick = () => {
       const prev = localStorage.getItem('quiz_last_result');
       if (prev) downloadObject(JSON.parse(prev), 'last_quiz_result.json');
