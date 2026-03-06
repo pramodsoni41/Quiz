@@ -419,25 +419,12 @@ async function validateStudentLogin(regNo, password) {
     console.log('HTTP status:', response.status);
     console.log('Raw response:', rawText);
 
-    return JSON.parse(rawText);
-  } catch (err) {
-    console.error('Login validation failed:', err);
-    alert('Login validation failed.');
-    return { status: 'error' };
-  }
-}
-
-    const rawText = await response.text();
-    console.log('HTTP status:', response.status);
-    console.log('Raw response:', rawText);
-
     try {
       return JSON.parse(rawText);
     } catch (e) {
       alert('Server did not return JSON. Check console.');
       return { status: 'error', raw: rawText };
     }
-
   } catch (err) {
     console.error('Login validation failed:', err);
     alert('Login validation failed: ' + err.message);
