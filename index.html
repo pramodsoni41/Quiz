@@ -491,7 +491,7 @@ async function sendResultToGoogleSheet(resultObj) {
     });
     return true;
   } catch (err) {
-    console.error(err);
+    console.error('Failed to send result to Google Sheet:', err);
     return false;
   }
 }
