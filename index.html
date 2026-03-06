@@ -509,50 +509,55 @@
     }
 
     $('startBtn').onclick = async () => {
-      const name = $('studentName').value.trim();
-      const regNo = $('regNo').value.trim();
-      const phoneNo = $('phoneNo').value.trim();
-      const password = $('studentPassword').value.trim();
+  const name = $('studentName').value.trim();
+  const regNo = $('regNo').value.trim();
+  const phoneNo = $('phoneNo').value.trim();
+  const password = $('studentPassword').value.trim();
 
-      if (!name || !regNo || !password) {
-        alert('Please enter name, registration number, and password.');
-        return;
-      }
+  if (!name || !regNo || !password) {
+    alert('Please enter name, registration number, and password.');
+    return;
+  }
 
-      try {
-        const loginResult = await validateStudentLogin(regNo, password);
+  try {
+    const loginResult = await validateStudentLogin(regNo, password);
+    console.log('loginResult =', loginResult);
 
-        if (loginResult.status === 'invalid') {
-          alert('Invalid registration number or password.');
-          return;
-        }
+    if (loginResult.status === 'invalid') {
+      alert('Invalid registration number or password.');
+      return;
+    }
 
-        if (loginResult.status === 'used') {
-          alert('This registration number has already been used.');
-          return;
-        }
+    if (loginResult.status === 'used') {
+      alert('This registration number has already been used.');
+      return;
+    }
 
-        if (loginResult.status !== 'ok') {
-          alert('Login validation failed.');
-          return;
-        }
+    if (loginResult.status !== 'ok') {
+      alert('Login validation failed.');
+      return;
+    }
 
-        const raw = await fetchQuestions();
-        state.student = { name, regNo, phoneNo };
-        state.questions = raw;
-        state.active = prepareQuestions(raw);
-        state.current = 0;
-        state.score = 0;
-        state.responses = [];
-        state.isSubmitting = false;
-
-        showSection('quiz');
-        renderQuestion();
-      } catch (err) {
-        alert('Unable to start quiz.');
-        console.error(err);
-      }
+    const raw = await fetchQuestions();
+    state.student = {
+      name: loginResult.name || name,
+      regNo,
+      phoneNo
     };
+    state.questions = raw;
+    state.active = prepareQuestions(raw);
+    state.current = 0;
+    state.score = 0;
+    state.responses = [];
+    state.isSubmitting = false;
+
+    showSection('quiz');
+    renderQuestion();
+  } catch (err) {
+    console.error(err);
+    alert('Unable to start quiz.');
+  }
+};
 
     $('finishBtn').onclick = finishQuiz;
     $('restartBtn').onclick = () => location.reload();
