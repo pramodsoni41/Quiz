@@ -322,6 +322,7 @@
 	let SHOW_INSTANT_FEEDBACK = true;
 	let SHOW_CORRECT_ANSWER = true;
 	let SHOW_RESULT_TABLE = true;
+	let ALLOW_MULTIPLE_ATTEMPTS = false;
 	const state = {
       student: null,
       questions: [],
@@ -403,7 +404,9 @@ async function loadQuizMetaOnly() {
       SHOW_INSTANT_FEEDBACK = fetched.meta.showAnswers;
       SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
     }
-
+	if (typeof fetched.meta.allowMultipleAttempts === 'boolean') {
+	  ALLOW_MULTIPLE_ATTEMPTS = fetched.meta.allowMultipleAttempts;
+	}
     if (typeof fetched.meta.showSummary === 'boolean') {
       SHOW_RESULT_TABLE = fetched.meta.showSummary;
     }
@@ -757,10 +760,10 @@ $('startBtn').onclick = async () => {
       return;
     }
 
-    if (loginResult.status === 'used') {
-      alert('You have already attempted this quiz. Multiple attempts are not allowed.');
-      return;
-    }
+	if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
+	  alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+	  return;
+	}
 
     if (loginResult.status === 'ok') {
       const fetched = await fetchQuestions();
