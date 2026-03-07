@@ -212,7 +212,6 @@
       <div class="score" id="scoreText">0.00 / 0</div>
       <p class="muted" id="resultMeta"></p>
       <div class="row">
-        <button id="downloadResultBtn" class="good">Download Result JSON</button>
         <button id="restartBtn" class="secondary">Restart</button>
       </div>
       <table>
@@ -582,14 +581,7 @@ async function validateStudentLogin(regNo, password) {
     $('finishBtn').onclick = finishQuiz;
     $('restartBtn').onclick = () => location.reload();
 
-    $('downloadBtn').onclick = () => {
-      const prev = localStorage.getItem('quiz_last_result');
-      if (prev) downloadObject(JSON.parse(prev), 'last_quiz_result.json');
-    };
-
-    if (localStorage.getItem('quiz_last_result')) {
-      $('downloadBtn').classList.remove('hidden');
-    }
+    
   </script>
 </body>
 </html>
