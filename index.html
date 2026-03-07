@@ -281,6 +281,8 @@
       <div class="answers" id="answersBox"></div>
 		<div class="row">
 		  <button id="submitAnswerBtn" disabled>Submit Answer</button>
+		    <button id="skipBtn" class="secondary">Skip</button>
+
 		  <button id="finishBtn" class="secondary">Finish Quiz</button>
 		</div>
       <div class="notice" id="quizNotice">Select one answer.</div>
@@ -449,12 +451,12 @@ function recordAndContinue(selectedIndex, timedOut) {
 
   clearInterval(state.timer);
   const q = state.active[state.current];
-
   const answerButtons = [...document.querySelectorAll('.answer')];
   const correct = selectedIndex === q.correctIndex;
 
   answerButtons.forEach((b, idx) => {
     b.disabled = true;
+    b.classList.remove('selected');
 
     if (SHOW_INSTANT_FEEDBACK) {
       if (idx === q.correctIndex) {
@@ -468,9 +470,10 @@ function recordAndContinue(selectedIndex, timedOut) {
 
   $('submitAnswerBtn').disabled = true;
   $('finishBtn').disabled = true;
+  $('skipBtn').disabled = true;
 
   if (selectedIndex === -1) {
-    // unattempted
+    // skipped or timed out
   } else if (correct) {
     state.score += 1;
   } else {
@@ -488,15 +491,23 @@ function recordAndContinue(selectedIndex, timedOut) {
     timedOut
   });
 
-  if (timedOut) {
-    $('quizNotice').textContent = 'Time up.';
+  if (selectedIndex === -1 && !timedOut) {
+    $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+      ? `Question skipped. Correct answer: ${q.answers[q.correctIndex]}`
+      : 'Question skipped.';
+  } else if (timedOut) {
+    $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+      ? `Time up. Correct answer: ${q.answers[q.correctIndex]}`
+      : 'Time up.';
   } else if (SHOW_INSTANT_FEEDBACK) {
     if (correct) {
-      $('quizNotice').textContent = 'Correct.';
-    } else if (SHOW_CORRECT_ANSWER) {
-      $('quizNotice').textContent = `Incorrect. Correct answer: ${q.answers[q.correctIndex]}`;
+      $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+        ? `Correct. Answer: ${q.answers[q.correctIndex]}`
+        : 'Correct.';
     } else {
-      $('quizNotice').textContent = 'Incorrect.';
+      $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+        ? `Incorrect. Correct answer: ${q.answers[q.correctIndex]}`
+        : 'Incorrect.';
     }
   } else {
     $('quizNotice').textContent = 'Answer submitted.';
@@ -511,7 +522,7 @@ function recordAndContinue(selectedIndex, timedOut) {
     } else {
       finishQuiz();
     }
-  }, SHOW_INSTANT_FEEDBACK ? 1200 : 700);
+  }, SHOW_INSTANT_FEEDBACK ? 1500 : 700);
 }
 function startTimer() {
   clearInterval(state.timer);
@@ -535,6 +546,7 @@ function startTimer() {
 	  $('answersBox').innerHTML = '';
 	  $('quizNotice').textContent = 'Select one answer and click Submit Answer.';
 	  $('finishBtn').disabled = false;
+	  $('skipBtn').disabled = false;
 		$('submitAnswerBtn').disabled = true;
 
 	  q.answers.forEach((ans, idx) => {
@@ -772,7 +784,9 @@ $('submitAnswerBtn').onclick = () => {
   }
   recordAndContinue(state.selectedIndex, false);
 };
-
+$('skipBtn').onclick = () => {
+  recordAndContinue(-1, false);
+};
 $('finishBtn').onclick = finishQuiz;
 $('restartBtn').onclick = () => location.reload();
 
