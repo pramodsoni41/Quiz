@@ -215,22 +215,22 @@
       <div class="grid2">
         <div>
           <label for="studentName">Student Name</label>
-          <input id="studentName" placeholder="Enter name" />
+          <input id="studentName" placeholder="Enter name"  disabled />
         </div>
         <div>
           <label for="regNo">Registration No</label>
-          <input id="regNo" placeholder="Enter registration number" />
+          <input id="regNo" placeholder="Enter registration number" disabled  />
         </div>
       </div>
 
       <div class="grid2" style="margin-top:12px;">
         <div>
           <label for="phoneNo">Phone No</label>
-          <input id="phoneNo" placeholder="Optional" />
+          <input id="phoneNo" placeholder="Optional"  disabled />
         </div>
         <div>
           <label for="studentPassword">Password</label>
-          <input id="studentPassword" type="text" placeholder="Enter password" />
+          <input id="studentPassword" type="text" placeholder="Enter password" disabled  />
         </div>
       </div>
 
@@ -337,12 +337,31 @@ async function loadQuizMetaOnly() {
   try {
     const fetched = await fetchQuestions();
 
-    if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
-    if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
-    if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
+    if (fetched.meta.quizName)
+      $('quizTitle').textContent = fetched.meta.quizName;
+
+    if (fetched.meta.dueDate)
+      $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+
+    if (fetched.meta.instructions)
+      $('quizInstructions').textContent = fetched.meta.instructions;
+
+    // Enable inputs after loading
+    $('studentName').disabled = false;
+    $('regNo').disabled = false;
+    $('phoneNo').disabled = false;
+    $('studentPassword').disabled = false;
+
+    const startBtn = $('startBtn');
+    startBtn.disabled = false;
+    startBtn.textContent = "Start Quiz";
 
   } catch (err) {
     console.error('Could not load quiz metadata:', err);
+
+    $('quizTitle').textContent = "Quiz could not load";
+    $('quizInstructions').textContent = "Please refresh the page.";
+
   }
 }
 
