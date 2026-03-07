@@ -485,8 +485,7 @@ async function validateStudentLogin(regNo, password) {
     }
   });
 
-  const finalMarks = correct; // change this if you use negative marking
-
+	const finalMarks = (correct * 1) - (incorrect * 0.25);
   $('quizContainer').classList.add('hidden');
   $('resultContainer').classList.remove('hidden');
 
@@ -495,7 +494,7 @@ async function validateStudentLogin(regNo, password) {
     <p><strong>Total Correct answers:</strong> ${correct}</p>
     <p><strong>Total Incorrect answers:</strong> ${incorrect}</p>
     <p><strong>Total unattempted:</strong> ${unattempted}</p>
-    <p><strong>Final Marks:</strong> ${finalMarks}</p>
+    <p><strong>Final Marks:</strong> ${finalMarks.toFixed(2)}</p>
   `;
 }
 
