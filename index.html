@@ -683,25 +683,28 @@ async function finishQuiz() {
       const q = state.active[i];
       const r = state.responses[i];
 
-      let yourAnswer = '-';
-      let correctAnswer = q.answers[q.correctIndex];
-      let status = 'Unattempted';
-      let rowClass = 'result-unattempted';
+		let yourAnswer = '-';
+		let correctAnswer = '-';
+		let status = 'Unattempted';
+		let rowClass = 'result-unattempted';
 
-      if (r) {
-        yourAnswer = r.selectedIndex >= 0 ? r.selectedAnswer : 'No answer';
+	if (r) {
+	  yourAnswer = r.selectedIndex >= 0 ? r.selectedAnswer : 'No answer';
 
-        if (r.correct) {
-          status = 'Correct';
-          rowClass = 'result-correct';
-        } else if (r.selectedIndex === -1) {
-          status = 'Unattempted';
-          rowClass = 'result-unattempted';
-        } else {
-          status = 'Incorrect';
-          rowClass = 'result-wrong';
-        }
-      }
+	  if (r.correct) {
+		status = 'Correct';
+		rowClass = 'result-correct';
+		correctAnswer = q.answers[q.correctIndex];
+	  } else if (r.selectedIndex === -1) {
+		status = 'Unattempted';
+		rowClass = 'result-unattempted';
+		correctAnswer = '-';
+	  } else {
+		status = 'Incorrect';
+		rowClass = 'result-wrong';
+		correctAnswer = q.answers[q.correctIndex];
+	  }
+	}
 
       const tr = document.createElement('tr');
       tr.className = rowClass;
