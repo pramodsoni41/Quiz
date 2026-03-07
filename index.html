@@ -555,15 +555,14 @@ let correct = 0;
 let incorrect = 0;
 
 state.responses.forEach(r => {
-  if (r.correct) {
-    correct++;
-  } else if (r.selectedIndex !== -1) {
-    incorrect++;
-  }
+  if (r.correct) correct++;
+  else incorrect++;
 });
 
 const totalQuestions = state.active.length;
-const unattempted = totalQuestions - (correct + incorrect);
+const attempted = state.responses.length;
+const unattempted = totalQuestions - attempted;
+
   const finalMarks = (correct * 1) - (incorrect * 0.25);
   const percentage = totalQuestions ? (finalMarks / totalQuestions) * 100 : 0;
 
