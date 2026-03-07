@@ -153,7 +153,16 @@
     color:var(--text);
     min-height:84px;
   }
+.answer.selected {
+  border-color: var(--accent);
+  background: #dbeafe;
+}
 
+.nocopy {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
   .answer:hover {
     border-color: rgba(37,99,235,0.55);
     background:#eff6ff;
@@ -239,8 +248,7 @@
       </div>
 
       <div class="row">
-        <button id="startBtn">Start Quiz</button>
-      </div>
+		<button id="startBtn" disabled>Loading Quiz...</button>      </div>
     </section>
 
     <section id="quiz" class="card hidden">
@@ -249,11 +257,12 @@
         <div class="pill timer" id="timerPill">15 s</div>
         <div class="pill" id="studentPill">Student</div>
       </div>
-      <div class="qtext" id="questionText"></div>
+      <div class="qtext  nocopy" id="questionText"></div>
       <div class="answers" id="answersBox"></div>
-      <div class="row">
-        <button id="finishBtn" class="secondary">Finish Quiz</button>
-      </div>
+		<div class="row">
+		  <button id="submitAnswerBtn" disabled>Submit Answer</button>
+		  <button id="finishBtn" class="secondary">Finish Quiz</button>
+		</div>
       <div class="notice" id="quizNotice">Select one answer.</div>
     </section>
 
@@ -281,7 +290,8 @@
       timeLeft: 0,
       score: 0,
       responses: [],
-      isSubmitting: false
+      isSubmitting: false,
+	  selectedIndex: null
     };
 
     function shuffle(arr) {
@@ -340,13 +350,14 @@ async function loadQuizMetaOnly() {
     if (fetched.meta.quizName)
       $('quizTitle').textContent = fetched.meta.quizName;
 
+    $('quizIntro').textContent = 'Enter your details and login password to begin.';
+
     if (fetched.meta.dueDate)
       $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
 
     if (fetched.meta.instructions)
       $('quizInstructions').textContent = fetched.meta.instructions;
 
-    // Enable inputs after loading
     $('studentName').disabled = false;
     $('regNo').disabled = false;
     $('phoneNo').disabled = false;
@@ -358,10 +369,8 @@ async function loadQuizMetaOnly() {
 
   } catch (err) {
     console.error('Could not load quiz metadata:', err);
-
     $('quizTitle').textContent = "Quiz could not load";
     $('quizInstructions').textContent = "Please refresh the page.";
-
   }
 }
 
@@ -396,84 +405,97 @@ async function loadQuizMetaOnly() {
       if (state.timeLeft <= 5 && state.timeLeft > 0) $('timerPill').classList.add('low');
       if (state.timeLeft <= 0) $('timerPill').classList.add('zero');
     }
+function recordAndContinue(selectedIndex, timedOut) {
+  if (state.isSubmitting) return;
 
-    function startTimer() {
+  clearInterval(state.timer);
+  const q = state.active[state.current];
+
+  const answerButtons = [...document.querySelectorAll('.answer')];
+  answerButtons.forEach(b => b.disabled = true);
+  $('submitAnswerBtn').disabled = true;
+  $('finishBtn').disabled = true;
+
+  const correct = selectedIndex === q.correctIndex;
+
+  if (selectedIndex === -1) {
+    // unattempted
+  } else if (correct) {
+    state.score += 1;
+  } else {
+    state.score -= 0.25;
+  }
+
+  state.responses.push({
+    questionNo: state.current + 1,
+    question: q.question,
+    selectedIndex,
+    selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+    correctIndex: q.correctIndex,
+    correctAnswer: q.answers[q.correctIndex],
+    correct,
+    timedOut
+  });
+
+  $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer submitted.';
+
+  setTimeout(() => {
+    if (state.isSubmitting) return;
+
+    state.current += 1;
+    if (state.current < state.active.length) {
+      renderQuestion();
+    } else {
+      finishQuiz();
+    }
+  }, 700);
+}
+function startTimer() {
+  clearInterval(state.timer);
+  state.timer = setInterval(() => {
+    state.timeLeft -= 1;
+    paintTimer();
+    if (state.timeLeft <= 0) {
       clearInterval(state.timer);
-      state.timer = setInterval(() => {
-        state.timeLeft -= 1;
-        paintTimer();
-        if (state.timeLeft <= 0) {
-          clearInterval(state.timer);
-          lockAndContinue(-1, true);
-        }
-      }, 1000);
+      recordAndContinue(-1, true);
     }
+  }, 1000);
+}
 
-    function renderQuestion() {
-      const q = state.active[state.current];
-      $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
-      $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
-      $('questionText').textContent = q.question;
-      $('answersBox').innerHTML = '';
-      $('quizNotice').textContent = 'Select one answer.';
-      $('finishBtn').disabled = false;
+	function renderQuestion() {
+	  const q = state.active[state.current];
+	  state.selectedIndex = null;
 
-      q.answers.forEach((ans, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'answer';
-        btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${ans}`;
-        btn.onclick = () => lockAndContinue(idx, false);
-        $('answersBox').appendChild(btn);
-      });
+	  $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
+	  $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
+	  $('questionText').textContent = q.question;
+	  $('answersBox').innerHTML = '';
+	  $('quizNotice').textContent = 'Select one answer and click Submit Answer.';
+	  $('finishBtn').disabled = false;
+		$('submitAnswerBtn').disabled = true;
 
-      state.timeLeft = q.time;
-      paintTimer();
-      startTimer();
-    }
+	  q.answers.forEach((ans, idx) => {
+		const btn = document.createElement('button');
+		btn.className = 'answer nocopy';
+		btn.type = 'button';
+		btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${ans}`;
 
-    function lockAndContinue(selectedIndex, timedOut) {
-      if (state.isSubmitting) return;
+		btn.onclick = () => {
+		  state.selectedIndex = idx;
+		  document.querySelectorAll('.answer').forEach(b => b.classList.remove('selected'));
+		  btn.classList.add('selected');
+		  $('submitAnswerBtn').disabled = false;
+		};
 
-      clearInterval(state.timer);
-      const q = state.active[state.current];
-      const answerButtons = [...document.querySelectorAll('.answer')];
-      answerButtons.forEach(b => b.disabled = true);
-      $('finishBtn').disabled = true;
+		$('answersBox').appendChild(btn);
+	  });
 
-      const correct = selectedIndex === q.correctIndex;
+	  state.timeLeft = q.time;
+	  paintTimer();
+	  startTimer();
+	}
 
-      if (selectedIndex === -1) {
-        // no mark change
-      } else if (correct) {
-        state.score += 1;
-      } else {
-        state.score -= 0.25;
-      }
 
-      state.responses.push({
-        questionNo: state.current + 1,
-        question: q.question,
-        selectedIndex,
-        selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
-        correctIndex: q.correctIndex,
-        correctAnswer: q.answers[q.correctIndex],
-        correct,
-        timedOut
-      });
-
-      $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer recorded.';
-
-      setTimeout(() => {
-        if (state.isSubmitting) return;
-
-        state.current += 1;
-        if (state.current < state.active.length) {
-          renderQuestion();
-        } else {
-          finishQuiz();
-        }
-      }, 900);
-    }
 
 async function validateStudentLogin(regNo, password) {
   try {
@@ -616,9 +638,7 @@ $('startBtn').onclick = async () => {
       state.responses = [];
       state.isSubmitting = false;
 
-      if (fetched.meta.quizName) {
-        document.querySelector('#setup h1').textContent = fetched.meta.quizName;
-      }
+
 
       showSection('quiz');
       renderQuestion();
@@ -630,9 +650,35 @@ $('startBtn').onclick = async () => {
   }
 };
 
-    $('finishBtn').onclick = finishQuiz;
-    $('restartBtn').onclick = () => location.reload();
-document.addEventListener("DOMContentLoaded", loadQuizMetaOnly);    
+$('submitAnswerBtn').onclick = () => {
+  if (state.selectedIndex === null) {
+    alert('Please select an answer first.');
+    return;
+  }
+  recordAndContinue(state.selectedIndex, false);
+};
+
+$('finishBtn').onclick = finishQuiz;
+$('restartBtn').onclick = () => location.reload();
+
+document.addEventListener("DOMContentLoaded", loadQuizMetaOnly);  
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('cut', e => e.preventDefault());
+document.addEventListener('selectstart', e => {
+  if (e.target.closest('.nocopy')) e.preventDefault();
+});
+
+document.addEventListener('keydown', e => {
+  const blocked =
+    (e.ctrlKey || e.metaKey) &&
+    ['c', 'x', 'a', 'u', 's', 'p'].includes(e.key.toLowerCase());
+
+  if (blocked) {
+    e.preventDefault();
+  }
+});
   </script>
 </body>
 </html>
