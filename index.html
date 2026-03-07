@@ -551,21 +551,19 @@ async function validateStudentLogin(regNo, password) {
 async function finishQuiz() {
   clearInterval(state.timer);
 
-  let correct = 0;
-  let incorrect = 0;
-  let unattempted = 0;
+let correct = 0;
+let incorrect = 0;
 
-  state.responses.forEach(r => {
-    if (r.selectedIndex === -1) {
-      unattempted++;
-    } else if (r.correct) {
-      correct++;
-    } else {
-      incorrect++;
-    }
-  });
+state.responses.forEach(r => {
+  if (r.correct) {
+    correct++;
+  } else if (r.selectedIndex !== -1) {
+    incorrect++;
+  }
+});
 
-  const totalQuestions = state.active.length;
+const totalQuestions = state.active.length;
+const unattempted = totalQuestions - (correct + incorrect);
   const finalMarks = (correct * 1) - (incorrect * 0.25);
   const percentage = totalQuestions ? (finalMarks / totalQuestions) * 100 : 0;
 
