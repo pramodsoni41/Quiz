@@ -317,11 +317,11 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-	const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx_-A6OQK23IdPnpAJsHl9rf6DCWtNQzIgfBfx6aUxROcM8akpI3968gKRDUfK8w/exec";	
+	const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4cIrnTdbym_n084ndG-dzOCTyL5XZ3GoWTla10euB7Ci-3XSBG8PuNqIyjtKTFXw/exec";	
     // SETTINGS
-	const SHOW_INSTANT_FEEDBACK = true;   // true = show Correct/Incorrect after submit
-	const SHOW_CORRECT_ANSWER = true;    // true = also show the correct answer text
-	const SHOW_RESULT_TABLE = true;   // true = show question-wise table on result page
+	let SHOW_INSTANT_FEEDBACK = true;
+	let SHOW_CORRECT_ANSWER = true;
+	let SHOW_RESULT_TABLE = true;
 	const state = {
       student: null,
       questions: [],
@@ -398,6 +398,15 @@ async function loadQuizMetaOnly() {
 
     if (fetched.meta.instructions)
       $('quizInstructions').textContent = fetched.meta.instructions;
+
+    if (typeof fetched.meta.showAnswers === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = fetched.meta.showAnswers;
+      SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
+    }
+
+    if (typeof fetched.meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = fetched.meta.showSummary;
+    }
 
     $('studentName').disabled = false;
     $('regNo').disabled = false;
