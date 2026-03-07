@@ -162,7 +162,17 @@
   background: #dcfce7;
   border-color: #16a34a;
 }
+.result-correct td {
+  background: #f0fdf4;
+}
 
+.result-wrong td {
+  background: #fef2f2;
+}
+
+.result-unattempted td {
+  background: #f8fafc;
+}
 .answer.wrong {
   background: #fee2e2;
   border-color: #dc2626;
@@ -276,15 +286,30 @@
       <div class="notice" id="quizNotice">Select one answer.</div>
     </section>
 
-    <section id="result" class="card hidden">
-      <h2>Quiz Result</h2>
-      <div class="score" id="scoreText">0.00 / 0</div>
-      <p class="muted" id="resultMeta"></p>
-      <div class="row">
-        <button id="restartBtn" class="secondary">Restart</button>
-      </div>
+<section id="result" class="card hidden">
+  <h2>Quiz Result</h2>
+  <div class="score" id="scoreText">0.00 / 0</div>
+  <p class="muted" id="resultMeta"></p>
 
-    </section>
+  <div id="resultTableWrap" class="hidden">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Question</th>
+          <th>Your Answer</th>
+          <th>Correct Answer</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="resultTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="row">
+    <button id="restartBtn" class="secondary">Restart</button>
+  </div>
+</section>
   </div>
 
   <script>
@@ -294,6 +319,7 @@
     // SETTINGS
 	const SHOW_INSTANT_FEEDBACK = true;   // true = show Correct/Incorrect after submit
 	const SHOW_CORRECT_ANSWER = true;    // true = also show the correct answer text
+	const SHOW_RESULT_TABLE = true;   // true = show question-wise table on result page
 	const state = {
       student: null,
       questions: [],
@@ -588,19 +614,19 @@ async function validateStudentLogin(regNo, password) {
 async function finishQuiz() {
   clearInterval(state.timer);
 
-let correct = 0;
-let incorrect = 0;
+  let correct = 0;
+  let incorrect = 0;
 
-state.responses.forEach(r => {
-  if (r.correct) {
-    correct++;
-  } else if (r.selectedIndex !== -1) {
-    incorrect++;
-  }
-});
+  state.responses.forEach(r => {
+    if (r.correct) {
+      correct++;
+    } else if (r.selectedIndex !== -1) {
+      incorrect++;
+    }
+  });
 
-const totalQuestions = state.active.length;
-const unattempted = totalQuestions - (correct + incorrect);
+  const totalQuestions = state.active.length;
+  const unattempted = totalQuestions - (correct + incorrect);
   const finalMarks = (correct * 1) - (incorrect * 0.25);
   const percentage = totalQuestions ? (finalMarks / totalQuestions) * 100 : 0;
 
@@ -626,6 +652,53 @@ const unattempted = totalQuestions - (correct + incorrect);
     <strong>Total Unattempted:</strong> ${unattempted}<br>
     <strong>Final Marks:</strong> ${finalMarks.toFixed(2)}
   `;
+
+  const tableWrap = $('resultTableWrap');
+  const tableBody = $('resultTableBody');
+
+  if (SHOW_RESULT_TABLE) {
+    tableWrap.classList.remove('hidden');
+    tableBody.innerHTML = '';
+
+    for (let i = 0; i < state.active.length; i++) {
+      const q = state.active[i];
+      const r = state.responses[i];
+
+      let yourAnswer = '-';
+      let correctAnswer = q.answers[q.correctIndex];
+      let status = 'Unattempted';
+      let rowClass = 'result-unattempted';
+
+      if (r) {
+        yourAnswer = r.selectedIndex >= 0 ? r.selectedAnswer : 'No answer';
+
+        if (r.correct) {
+          status = 'Correct';
+          rowClass = 'result-correct';
+        } else if (r.selectedIndex === -1) {
+          status = 'Unattempted';
+          rowClass = 'result-unattempted';
+        } else {
+          status = 'Incorrect';
+          rowClass = 'result-wrong';
+        }
+      }
+
+      const tr = document.createElement('tr');
+      tr.className = rowClass;
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${escapeHtml(q.question)}</td>
+        <td>${escapeHtml(yourAnswer)}</td>
+        <td>${escapeHtml(correctAnswer)}</td>
+        <td>${status}</td>
+      `;
+      tableBody.appendChild(tr);
+    }
+  } else {
+    tableWrap.classList.add('hidden');
+    tableBody.innerHTML = '';
+  }
 }
 
 
