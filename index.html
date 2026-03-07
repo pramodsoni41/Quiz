@@ -205,9 +205,13 @@
 <body>
   <div class="container">
     <section id="setup" class="card">
-      <h1>Sample Quiz</h1>
-      <p class="muted">Enter your details and login password to begin. Questions and answer options are shuffled automatically for each student.</p>
+      <h1 id="quizTitle">Sample Quiz</h1>
+		<p class="muted" id="quizIntro">Enter your details and login password to begin.</p>
+		<p class="muted" id="quizDue"></p>
 
+		<div class="notice" id="quizInstructions">
+		  Marking scheme: +1 for correct, -0.25 for wrong, 0 for unattempted.
+		</div>
       <div class="grid2">
         <div>
           <label for="studentName">Student Name</label>
@@ -236,7 +240,6 @@
 
       <div class="row">
         <button id="startBtn">Start Quiz</button>
-        <button id="downloadBtn" class="secondary hidden">Download Previous Result</button>
       </div>
     </section>
 
@@ -261,14 +264,7 @@
       <div class="row">
         <button id="restartBtn" class="secondary">Restart</button>
       </div>
-<section id="result" class="card hidden">
-  <h2>Quiz Result</h2>
-  <div class="score" id="scoreText">0.00 / 0</div>
-  <p class="muted" id="resultMeta"></p>
-  <div class="row">
-    <button id="restartBtn" class="secondary">Restart</button>
-  </div>
-</section>
+
     </section>
   </div>
 
@@ -297,62 +293,47 @@
       return a;
     }
 
-	async function fetchQuestions() {
-	  const res = await fetch(GOOGLE_SCRIPT_URL, {
-		method: 'POST',
-		headers: {
-		  'Content-Type': 'text/plain;charset=utf-8'
-		},
-		body: JSON.stringify({ action: 'getQuestions' })
-	  });
+async function fetchQuestions() {
+  const res = await fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({ action: 'getQuestions' })
+  });
 
-	  const text = await res.text();
-	  console.log("Raw response:", text);
+  const text = await res.text();
+  console.log("Raw response:", text);
 
-	  let data;
-	  try {
-		data = JSON.parse(text);
-	  } catch (err) {
-		throw new Error("Server did not return valid JSON: " + text);
-	  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error("Server did not return valid JSON: " + text);
+  }
 
-	  if (data.status !== 'ok') {
-		throw new Error(data.message || JSON.stringify(data));
-	  }
+  if (data.status !== 'ok') {
+    throw new Error(data.message || JSON.stringify(data));
+  }
 
-	  return data.questions.map((q, idx) => {
-		const answers = [q.options.A, q.options.B, q.options.C, q.options.D];
-		const correctMap = { A: 0, B: 1, C: 2, D: 3 };
+  const questions = data.questions.map((q, idx) => {
+    const answers = [q.options.A, q.options.B, q.options.C, q.options.D];
+    const correctMap = { A: 0, B: 1, C: 2, D: 3 };
 
-		if (!q.question || !Array.isArray(answers) || answers.length < 2) {
-		  throw new Error(`Question ${idx + 1} has invalid format`);
-		}
+    return {
+      question: q.question,
+      answers,
+      correctIndex: correctMap[q.correct],
+      time: Number(q.time) || 15
+    };
+  });
 
-		return {
-		  question: q.question,
-		  answers: answers,
-		  correctIndex: correctMap[q.correct],
-		  time: Number(q.time) || 15
-		};
-	  });
-	}
-    function normalizeJson(data) {
-      return data.map((q, idx) => {
-        const answers = q.answers || q.options;
-        const correctRaw = q.correctAnswer ?? q.answer;
+  return {
+    meta: data.meta || {},
+    questions
+  };
+}
 
-        if (!Array.isArray(answers) || answers.length < 2) {
-          throw new Error(`Question ${idx + 1} has invalid answers/options`);
-        }
-
-        return {
-          question: q.question,
-          answers: answers,
-          correctIndex: Number(correctRaw),
-          time: Number(q.time) || 15
-        };
-      });
-    }
 
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
@@ -371,20 +352,8 @@
       return shuffledQuestions;
     }
 
-    function savePreviousResult(jsonObj) {
-      localStorage.setItem('quiz_last_result', JSON.stringify(jsonObj));
-      $('downloadBtn').classList.remove('hidden');
-    }
 
-    function downloadObject(obj, filename) {
-      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+
 
     function showSection(id) {
       ['setup', 'quiz', 'result'].forEach(sec => $(sec).classList.add('hidden'));
@@ -567,33 +536,14 @@ async function finishQuiz() {
   $('resultMeta').innerHTML = `
     <strong>Total Correct answers:</strong> ${correct}<br>
     <strong>Total Incorrect answers:</strong> ${incorrect}<br>
+    <strong>Total Unattempted:</strong> ${unattempted}<br>
     <strong>Final Marks:</strong> ${finalMarks.toFixed(2)}
   `;
-
-  $('resultTable').innerHTML = "";
-
-  state.responses.forEach((r, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${escapeHtml(r.question)}</td>
-      <td>${escapeHtml(r.selectedAnswer)}</td>
-      <td>${r.selectedIndex === -1 ? 'Unattempted' : (r.correct ? 'Correct' : 'Incorrect')}</td>
-    `;
-    $('resultTable').appendChild(tr);
-  });
 }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
 
-    $('startBtn').onclick = async () => {
+
+$('startBtn').onclick = async () => {
   const name = $('studentName').value.trim();
   const regNo = $('regNo').value.trim();
   const phoneNo = $('phoneNo').value.trim();
@@ -613,17 +563,32 @@ async function finishQuiz() {
       return;
     }
 
+    if (loginResult.status === 'used') {
+      alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+      return;
+    }
 
     if (loginResult.status === 'ok') {
-      const raw = await fetchQuestions();
-
-      state.student = { name, regNo, phoneNo };
-      state.questions = raw;
-      state.active = prepareQuestions(raw);
+      const fetched = await fetchQuestions();
+		// Load quiz metadata from sheet
+	if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
+	if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+	if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
+      state.student = {
+        name: loginResult.name || name,
+        regNo,
+        phoneNo
+      };
+      state.questions = fetched.questions;
+      state.active = prepareQuestions(fetched.questions);
       state.current = 0;
       state.score = 0;
       state.responses = [];
       state.isSubmitting = false;
+
+      if (fetched.meta.quizName) {
+        document.querySelector('#setup h1').textContent = fetched.meta.quizName;
+      }
 
       showSection('quiz');
       renderQuestion();
