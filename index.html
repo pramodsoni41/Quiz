@@ -396,7 +396,24 @@ async function loadQuizMetaOnly() {
 
     if (fetched.meta.dueDate)
       $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+	if (fetched.meta.status) {
+	  QUIZ_STATUS = String(fetched.meta.status).toUpperCase();
+	}
 
+	if (QUIZ_STATUS !== "OPEN") {
+	  $('quizTitle').textContent = fetched.meta.quizName || 'Quiz Closed';
+	  $('quizIntro').textContent = 'This quiz is currently closed.';
+	  $('quizInstructions').textContent = 'Please contact the instructor.';
+	  $('studentName').disabled = true;
+	  $('regNo').disabled = true;
+	  $('phoneNo').disabled = true;
+	  $('studentPassword').disabled = true;
+
+	  const startBtn = $('startBtn');
+	  startBtn.disabled = true;
+	  startBtn.textContent = 'Quiz Closed';
+	  return;
+	}
     if (fetched.meta.instructions)
       $('quizInstructions').textContent = fetched.meta.instructions;
 
@@ -503,16 +520,16 @@ function recordAndContinue(selectedIndex, timedOut) {
     timedOut
   });
 
-  if (selectedIndex === -1 && !timedOut) {
-    $('quizNotice').textContent = SHOW_CORRECT_ANSWER
-      ? `Question skipped. Correct answer: ${q.answers[q.correctIndex]}`
-      : 'Question skipped.';
-  } else if (timedOut) {
-    $('quizNotice').textContent = SHOW_CORRECT_ANSWER
-      ? `Time up. Correct answer: ${q.answers[q.correctIndex]}`
-      : 'Time up.';
-  } else if (SHOW_INSTANT_FEEDBACK) {
-    if (correct) {
+  if (SHOW_INSTANT_FEEDBACK) {
+    if (selectedIndex === -1 && !timedOut) {
+      $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+        ? `Question skipped. Correct answer: ${q.answers[q.correctIndex]}`
+        : 'Question skipped.';
+    } else if (timedOut) {
+      $('quizNotice').textContent = SHOW_CORRECT_ANSWER
+        ? `Time up. Correct answer: ${q.answers[q.correctIndex]}`
+        : 'Time up.';
+    } else if (correct) {
       $('quizNotice').textContent = SHOW_CORRECT_ANSWER
         ? `Correct. Answer: ${q.answers[q.correctIndex]}`
         : 'Correct.';
@@ -522,7 +539,10 @@ function recordAndContinue(selectedIndex, timedOut) {
         : 'Incorrect.';
     }
   } else {
-    $('quizNotice').textContent = 'Answer submitted.';
+    $('quizNotice').textContent =
+      selectedIndex === -1
+        ? (timedOut ? 'Time up.' : 'Question skipped.')
+        : 'Answer submitted.';
   }
 
   setTimeout(() => {
@@ -759,7 +779,15 @@ $('startBtn').onclick = async () => {
   alert('You have already attempted this quiz. Multiple attempts are not allowed.');
   return;
 }
+if (loginResult.status === 'closed') {
+  alert('Quiz is currently closed.');
+  return;
+}
 
+if (loginResult.status === 'invalid') {
+  alert('Invalid registration number or password.');
+  return;
+}
 if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTIPLE_ATTEMPTS)) {
   const fetched = await fetchQuestions();
 
