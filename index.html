@@ -755,39 +755,33 @@ $('startBtn').onclick = async () => {
     const loginResult = await validateStudentLogin(regNo, password);
     console.log('loginResult =', loginResult);
 
-    if (loginResult.status === 'invalid') {
-      alert('Invalid registration number or password.');
-      return;
-    }
+    if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
+  alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+  return;
+}
 
-	if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
-	  alert('You have already attempted this quiz. Multiple attempts are not allowed.');
-	  return;
-	}
+if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTIPLE_ATTEMPTS)) {
+  const fetched = await fetchQuestions();
 
-    if (loginResult.status === 'ok') {
-      const fetched = await fetchQuestions();
-		// Load quiz metadata from sheet
-	if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
-	if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
-	if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
-      state.student = {
-        name: loginResult.name || name,
-        regNo,
-        phoneNo
-      };
-      state.questions = fetched.questions;
-      state.active = prepareQuestions(fetched.questions);
-      state.current = 0;
-      state.score = 0;
-      state.responses = [];
-      state.isSubmitting = false;
+  if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
+  if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+  if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
 
+  state.student = {
+    name: loginResult.name || name,
+    regNo,
+    phoneNo
+  };
+  state.questions = fetched.questions;
+  state.active = prepareQuestions(fetched.questions);
+  state.current = 0;
+  state.score = 0;
+  state.responses = [];
+  state.isSubmitting = false;
 
-
-      showSection('quiz');
-      renderQuestion();
-    }
+  showSection('quiz');
+  renderQuestion();
+}
 
   } catch (err) {
     console.error(err);
