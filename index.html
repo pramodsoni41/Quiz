@@ -36,7 +36,15 @@
     margin: 0 auto;
     padding: 20px;
   }
+.answer.correct {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
 
+.answer.wrong {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -281,7 +289,10 @@
     const $ = (id) => document.getElementById(id);
 
 	const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx_-A6OQK23IdPnpAJsHl9rf6DCWtNQzIgfBfx6aUxROcM8akpI3968gKRDUfK8w/exec";	
-    const state = {
+    // SETTINGS
+	const SHOW_INSTANT_FEEDBACK = true;   // true = show Correct/Incorrect after submit
+	const SHOW_CORRECT_ANSWER = true;    // true = also show the correct answer text
+	const state = {
       student: null,
       questions: [],
       active: [],
@@ -412,11 +423,23 @@ function recordAndContinue(selectedIndex, timedOut) {
   const q = state.active[state.current];
 
   const answerButtons = [...document.querySelectorAll('.answer')];
-  answerButtons.forEach(b => b.disabled = true);
+  const correct = selectedIndex === q.correctIndex;
+
+  answerButtons.forEach((b, idx) => {
+    b.disabled = true;
+
+    if (SHOW_INSTANT_FEEDBACK) {
+      if (idx === q.correctIndex) {
+        b.classList.add('correct');
+      }
+      if (idx === selectedIndex && selectedIndex !== q.correctIndex) {
+        b.classList.add('wrong');
+      }
+    }
+  });
+
   $('submitAnswerBtn').disabled = true;
   $('finishBtn').disabled = true;
-
-  const correct = selectedIndex === q.correctIndex;
 
   if (selectedIndex === -1) {
     // unattempted
@@ -437,7 +460,19 @@ function recordAndContinue(selectedIndex, timedOut) {
     timedOut
   });
 
-  $('quizNotice').textContent = timedOut ? 'Time up.' : 'Answer submitted.';
+  if (timedOut) {
+    $('quizNotice').textContent = 'Time up.';
+  } else if (SHOW_INSTANT_FEEDBACK) {
+    if (correct) {
+      $('quizNotice').textContent = 'Correct.';
+    } else if (SHOW_CORRECT_ANSWER) {
+      $('quizNotice').textContent = `Incorrect. Correct answer: ${q.answers[q.correctIndex]}`;
+    } else {
+      $('quizNotice').textContent = 'Incorrect.';
+    }
+  } else {
+    $('quizNotice').textContent = 'Answer submitted.';
+  }
 
   setTimeout(() => {
     if (state.isSubmitting) return;
@@ -448,7 +483,7 @@ function recordAndContinue(selectedIndex, timedOut) {
     } else {
       finishQuiz();
     }
-  }, 700);
+  }, SHOW_INSTANT_FEEDBACK ? 1200 : 700);
 }
 function startTimer() {
   clearInterval(state.timer);
