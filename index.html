@@ -323,7 +323,21 @@
 		throw new Error(data.message || JSON.stringify(data));
 	  }
 
-	  return data.questions;
+	  return data.questions.map((q, idx) => {
+		const answers = [q.options.A, q.options.B, q.options.C, q.options.D];
+		const correctMap = { A: 0, B: 1, C: 2, D: 3 };
+
+		if (!q.question || !Array.isArray(answers) || answers.length < 2) {
+		  throw new Error(`Question ${idx + 1} has invalid format`);
+		}
+
+		return {
+		  question: q.question,
+		  answers: answers,
+		  correctIndex: correctMap[q.correct],
+		  time: Number(q.time) || 15
+		};
+	  });
 	}
     function normalizeJson(data) {
       return data.map((q, idx) => {
@@ -516,34 +530,62 @@ async function validateStudentLogin(regNo, password) {
       }
     }
 
-    function finishQuiz() {
+async function finishQuiz() {
+  clearInterval(state.timer);
+
   let correct = 0;
   let incorrect = 0;
   let unattempted = 0;
 
-  quizData.forEach((q, i) => {
-    const selected = userAnswers[i];
-
-    if (!selected || selected === "") {
+  state.responses.forEach(r => {
+    if (r.selectedIndex === -1) {
       unattempted++;
-    } else if (selected === q.correct) {
+    } else if (r.correct) {
       correct++;
     } else {
       incorrect++;
     }
   });
 
-	const finalMarks = (correct * 1) - (incorrect * 0.25);
-  $('quizContainer').classList.add('hidden');
-  $('resultContainer').classList.remove('hidden');
+  const totalQuestions = state.active.length;
+  const finalMarks = (correct * 1) - (incorrect * 0.25);
+  const percentage = totalQuestions ? (finalMarks / totalQuestions) * 100 : 0;
 
-  $('resultContainer').innerHTML = `
-    <h2>Quiz Finished</h2>
-    <p><strong>Total Correct answers:</strong> ${correct}</p>
-    <p><strong>Total Incorrect answers:</strong> ${incorrect}</p>
-    <p><strong>Total unattempted:</strong> ${unattempted}</p>
-    <p><strong>Final Marks:</strong> ${finalMarks.toFixed(2)}</p>
+  const resultObj = {
+    student: state.student,
+    score: finalMarks.toFixed(2),
+    totalQuestions,
+    percentage: percentage.toFixed(2),
+    responses: state.responses
+  };
+
+  state.isSubmitting = true;
+
+  const submitResult = await sendResultToGoogleSheet(resultObj);
+  console.log("Submit result:", submitResult);
+
+  showSection('result');
+
+  $('scoreText').textContent = `${finalMarks.toFixed(2)} / ${totalQuestions}`;
+  $('resultMeta').innerHTML = `
+    <strong>Total Correct answers:</strong> ${correct}<br>
+    <strong>Total Incorrect answers:</strong> ${incorrect}<br>
+    <strong>Total unattempted:</strong> ${unattempted}<br>
+    <strong>Final Marks:</strong> ${finalMarks.toFixed(2)}
   `;
+
+  $('resultTable').innerHTML = "";
+
+  state.responses.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${escapeHtml(r.question)}</td>
+      <td>${escapeHtml(r.selectedAnswer)}</td>
+      <td>${r.selectedIndex === -1 ? 'Unattempted' : (r.correct ? 'Correct' : 'Incorrect')}</td>
+    `;
+    $('resultTable').appendChild(tr);
+  });
 }
 
     function escapeHtml(str) {
