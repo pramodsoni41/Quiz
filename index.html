@@ -205,8 +205,8 @@
 <body>
   <div class="container">
     <section id="setup" class="card">
-      <h1 id="quizTitle">Sample Quiz</h1>
-		<p class="muted" id="quizIntro">Enter your details and login password to begin.</p>
+      <h1 id="quizTitle">Loading quiz...</h1>
+		<p class="muted" id="quizIntro">Fetching quiz from server...</p>
 		<p class="muted" id="quizDue"></p>
 
 		<div class="notice" id="quizInstructions">
@@ -613,8 +613,7 @@ $('startBtn').onclick = async () => {
 
     $('finishBtn').onclick = finishQuiz;
     $('restartBtn').onclick = () => location.reload();
-loadQuizMetaOnly();
-    
+document.addEventListener("DOMContentLoaded", loadQuizMetaOnly);    
   </script>
 </body>
 </html>
