@@ -333,7 +333,18 @@ async function fetchQuestions() {
     questions
   };
 }
+async function loadQuizMetaOnly() {
+  try {
+    const fetched = await fetchQuestions();
 
+    if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
+    if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+    if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
+
+  } catch (err) {
+    console.error('Could not load quiz metadata:', err);
+  }
+}
 
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
@@ -602,7 +613,7 @@ $('startBtn').onclick = async () => {
 
     $('finishBtn').onclick = finishQuiz;
     $('restartBtn').onclick = () => location.reload();
-
+loadQuizMetaOnly();
     
   </script>
 </body>
