@@ -254,30 +254,31 @@
       return a;
     }
 
-    async function fetchQuestions() {
-  const res = await fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({
-      action: 'getQuestions'
-    })
-  });
+	async function fetchQuestions() {
+	  const res = await fetch(GOOGLE_SCRIPT_URL, {
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'text/plain;charset=utf-8'
+		},
+		body: JSON.stringify({ action: 'getQuestions' })
+	  });
 
-  if (!res.ok) {
-    throw new Error('Could not load questions from sheet');
-  }
+	  const text = await res.text();
+	  console.log("Raw response:", text);
 
-  const data = await res.json();
+	  let data;
+	  try {
+		data = JSON.parse(text);
+	  } catch (err) {
+		throw new Error("Server did not return valid JSON: " + text);
+	  }
 
-  if (data.status !== 'ok') {
-    throw new Error(data.message || 'Failed to fetch questions');
-  }
+	  if (data.status !== 'ok') {
+		throw new Error(data.message || JSON.stringify(data));
+	  }
 
-  return data.questions;
-}
-
+	  return data.questions;
+	}
     function normalizeJson(data) {
       return data.map((q, idx) => {
         const answers = q.answers || q.options;
