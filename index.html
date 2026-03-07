@@ -527,10 +527,6 @@ async function validateStudentLogin(regNo, password) {
       return;
     }
 
-    if (loginResult.status === 'used') {
-      alert('This registration number has already been used.');
-      return;
-    }
 
     if (loginResult.status === 'ok') {
       const raw = await fetchQuestions();
