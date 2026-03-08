@@ -892,6 +892,13 @@ function paintTimer() {
       }
 
       const serverResult = submitResult.result || {};
+      console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
+console.log("serverResult =", serverResult);
+
+const reviewMap = {};
+(serverResult.review || []).forEach(item => {
+  reviewMap[item.questionId] = item;
+});
       const reviewMap = {};
 (serverResult.review || []).forEach(item => {
   reviewMap[item.questionId] = item;
