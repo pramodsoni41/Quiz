@@ -891,18 +891,15 @@ function paintTimer() {
         return;
       }
 
-      const serverResult = submitResult.result || {};
-      console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
+const serverResult = submitResult.result || {};
+console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
 console.log("serverResult =", serverResult);
 
 const reviewMap = {};
 (serverResult.review || []).forEach(item => {
   reviewMap[item.questionId] = item;
 });
-      const reviewMap = {};
-(serverResult.review || []).forEach(item => {
-  reviewMap[item.questionId] = item;
-});
+
       $('scoreText').textContent = `${serverResult.score || '0.00'} / ${serverResult.totalQuestions || 0}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
