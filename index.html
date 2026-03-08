@@ -324,31 +324,32 @@
 	let SHOW_RESULT_TABLE = true;
 	let ALLOW_MULTIPLE_ATTEMPTS = false;
 	let QUIZ_STATUS = "OPEN";
+	
 	const state = {
-	  student: null,
-	  questions: [],
-	  active: [],
-	  current: 0,
-	  timer: null,
-	  timeLeft: 0,
-	  score: 0,
-	  responses: [],
-	  isSubmitting: false,
-	  selectedIndex: null,
-	  autoSubmitTriggered: false,
-	  questionViolationHandled: false,
+  student: null,
+  questions: [],
+  active: [],
+  current: 0,
+  timer: null,
+  timeLeft: 0,
+  score: 0,
+  responses: [],
+  isSubmitting: false,
+  selectedIndex: null,
+  questionStartTime: null,
+  currentQuestionReason: null,
 
-	  antiCheat: {
-		hiddenCount: 0,
-		blurCount: 0,
-		fullscreenExitCount: 0,
-		awayStart: null,
-		totalAwayMs: 0,
-		log: [],
-		started: false,
-		leftScreen: false
-	  }
-	};
+  antiCheat: {
+    hiddenCount: 0,
+    blurCount: 0,
+    fullscreenExitCount: 0,
+    awayStart: null,
+    totalAwayMs: 0,
+    log: [],
+    started: false
+  }
+};
+
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -592,6 +593,7 @@ function forfeitCurrentQuestion(reason) {
   if ($('quiz').classList.contains('hidden')) return;
 
   state.questionViolationHandled = true;
+  state.currentQuestionReason = 'focus_lost';
 
   clearInterval(state.timer);
 
@@ -687,6 +689,9 @@ function recordAndContinue(selectedIndex, timedOut) {
 
   clearInterval(state.timer);
   const q = state.active[state.current];
+  const timeSpentSeconds = state.questionStartTime
+  ? Math.round((Date.now() - state.questionStartTime) / 1000)
+  : null;
   const answerButtons = [...document.querySelectorAll('.answer')];
   const correct = selectedIndex === q.correctIndex;
 
@@ -716,16 +721,20 @@ function recordAndContinue(selectedIndex, timedOut) {
     state.score -= 0.25;
   }
 
-  state.responses.push({
-    questionNo: state.current + 1,
-    question: q.question,
-    selectedIndex,
-    selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
-    correctIndex: q.correctIndex,
-    correctAnswer: q.answers[q.correctIndex],
-    correct,
-    timedOut
-  });
+	state.responses.push({
+	  questionNo: state.current + 1,
+	  question: q.question,
+	  selectedIndex,
+	  selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+	  correctIndex: q.correctIndex,
+	  correctAnswer: q.answers[q.correctIndex],
+	  correct,
+	  timedOut,
+	  reason:
+		state.currentQuestionReason ||
+		(timedOut ? 'timed_out' : (selectedIndex === -1 ? 'skipped' : 'answered')),
+	  timeSpentSeconds
+	});
 
   if (SHOW_INSTANT_FEEDBACK) {
     if (selectedIndex === -1 && !timedOut) {
@@ -778,6 +787,8 @@ function startTimer() {
 	function renderQuestion() {
 	  const q = state.active[state.current];
 	  state.selectedIndex = null;
+	  state.questionStartTime = Date.now();
+	  state.currentQuestionReason = null;
 	  state.questionViolationHandled = false;
 	  $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
 	  $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
@@ -1040,9 +1051,11 @@ $('submitAnswerBtn').onclick = () => {
     alert('Please select an answer first.');
     return;
   }
+  state.currentQuestionReason = 'answered';
   recordAndContinue(state.selectedIndex, false);
 };
 $('skipBtn').onclick = () => {
+  state.currentQuestionReason = 'skipped';
   recordAndContinue(-1, false);
 };
 $('finishBtn').onclick = finishQuiz;
