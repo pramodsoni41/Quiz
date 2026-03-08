@@ -210,7 +210,18 @@
     font-weight:800;
     color:var(--accent2);
   }
+@media (max-width: 760px) {
+  .grid2, .answers { grid-template-columns:1fr; }
+  .qtext { font-size:1.25rem; }
 
+  #timerPillTop {
+    display: none;
+  }
+
+  .row .timer {
+    margin-left: auto;
+  }
+}
   @media (max-width: 760px) {
     .grid2, .answers { grid-template-columns:1fr; }
     .qtext { font-size:1.25rem; }
@@ -261,22 +272,24 @@
     </section>
 
     <section id="quiz" class="card hidden">
-      <div class="topbar">
-        <div class="pill" id="progressPill">Question 1 / 1</div>
-        <div class="pill timer" id="timerPill">15 s</div>
-        <div class="pill" id="studentPill">Student</div>
-      </div>
-      <div class="qtext nocopy" id="questionText"></div>
-      <div class="answers" id="answersBox"></div>
-      <div class="row">
-        <button id="submitAnswerBtn" disabled>Submit Answer</button>
-        <button id="skipBtn" class="secondary">Skip</button>
-        <button id="finishBtn" class="secondary">Finish Quiz</button>
-        <div class="pill timer" id="timerPill">15 s</div>
+  <div class="topbar">
+    <div class="pill" id="progressPill">Question 1 / 1</div>
+    <div class="pill timer" id="timerPillTop">15 s</div>
+    <div class="pill" id="studentPill">Student</div>
+  </div>
 
-      </div>
-      <div class="notice" id="quizNotice">Select one answer.</div>
-    </section>
+  <div class="qtext nocopy" id="questionText"></div>
+  <div class="answers" id="answersBox"></div>
+
+  <div class="row">
+    <button id="submitAnswerBtn" disabled>Submit Answer</button>
+    <button id="skipBtn" class="secondary">Skip</button>
+    <button id="finishBtn" class="secondary">Finish Quiz</button>
+    <div class="pill timer" id="timerPillBottom">15 s</div>
+  </div>
+
+  <div class="notice" id="quizNotice">Select one answer.</div>
+</section>
 
     <section id="result" class="card hidden">
       <h2>Quiz Result</h2>
@@ -680,12 +693,23 @@
       $(id).classList.remove('hidden');
     }
 
-    function paintTimer() {
-      $('timerPill').textContent = `${state.timeLeft} s`;
-      $('timerPill').classList.remove('low', 'zero');
-      if (state.timeLeft <= 5 && state.timeLeft > 0) $('timerPill').classList.add('low');
-      if (state.timeLeft <= 0) $('timerPill').classList.add('zero');
+function paintTimer() {
+  const timers = [$('timerPillTop'), $('timerPillBottom')];
+
+  timers.forEach(timerEl => {
+    if (!timerEl) return;
+
+    timerEl.textContent = `${state.timeLeft} s`;
+    timerEl.classList.remove('low', 'zero');
+
+    if (state.timeLeft <= 5 && state.timeLeft > 0) {
+      timerEl.classList.add('low');
     }
+    if (state.timeLeft <= 0) {
+      timerEl.classList.add('zero');
+    }
+  });
+}
 
     function recordAndContinue(selectedIndex, timedOut) {
       if (state.isSubmitting) return;
