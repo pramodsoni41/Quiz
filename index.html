@@ -662,14 +662,15 @@ function handleLeave(type) {
     }
   });
 
-  document.addEventListener('fullscreenchange', () => {
-    if (!state.antiCheat.started || $('quiz').classList.contains('hidden')) return;
+document.addEventListener('fullscreenchange', () => {
+  if (!state.antiCheat.started || $('quiz').classList.contains('hidden')) return;
 
-    if (!document.fullscreenElement) {
-      state.antiCheat.fullscreenExitCount += 1;
-      registerViolation('fullscreen_exit');
-    }
-  });
+  if (!document.fullscreenElement) {
+    state.antiCheat.fullscreenExitCount += 1;
+    registerViolation('fullscreen_exit');
+    forfeitCurrentQuestion('fullscreen_exit');
+  }
+});
 }
 
 
@@ -779,6 +780,7 @@ function startTimer() {
     paintTimer();
     if (state.timeLeft <= 0) {
       clearInterval(state.timer);
+      state.currentQuestionReason = 'timed_out';
       recordAndContinue(-1, true);
     }
   }, 1000);
@@ -1026,6 +1028,7 @@ if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTI
   state.score = 0;
   state.responses = [];
   state.isSubmitting = false;
+  state.questionViolationHandled = false;
 	state.antiCheat.hiddenCount = 0;
 	state.antiCheat.blurCount = 0;
 	state.antiCheat.fullscreenExitCount = 0;
@@ -1033,6 +1036,7 @@ if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTI
 	state.antiCheat.totalAwayMs = 0;
 	state.antiCheat.log = [];
 	state.antiCheat.started = true;
+	state.antiCheat.leftScreen = false;
 
 	showSection('quiz');
 	updateAntiCheatPanel();
