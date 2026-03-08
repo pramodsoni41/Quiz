@@ -222,10 +222,7 @@
     margin-left: auto;
   }
 }
-  @media (max-width: 760px) {
-    .grid2, .answers { grid-template-columns:1fr; }
-    .qtext { font-size:1.25rem; }
-  }
+
 </style>
 </head>
 
@@ -320,7 +317,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpyhewzaw4LQ5CIPmnOe8SEnpob6BrKmJKB7J9qSHQamU_1F6kUeklXCCKoLWYBao/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9nEBTsSUPxqW5h4HDPIc4EjQd3dAucPQqo3MQUWBIRubwhvdy405zEpvi2Ng9aB4/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -435,8 +432,10 @@
         }
 
         if (typeof meta.showAnswers === 'boolean') {
-          SHOW_INSTANT_FEEDBACK = meta.showAnswers;
           SHOW_CORRECT_ANSWER = meta.showAnswers;
+        }
+        if (typeof meta.showInstantFeedback === 'boolean') {
+          SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
         }
         if (typeof meta.allowMultipleAttempts === 'boolean') {
           ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
@@ -893,6 +892,10 @@ function paintTimer() {
       }
 
       const serverResult = submitResult.result || {};
+      const reviewMap = {};
+(serverResult.review || []).forEach(item => {
+  reviewMap[item.questionId] = item;
+});
       $('scoreText').textContent = `${serverResult.score || '0.00'} / ${serverResult.totalQuestions || 0}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
@@ -910,28 +913,42 @@ function paintTimer() {
         tableBody.innerHTML = '';
 
         const rows = Array.isArray(state.responses) ? state.responses : [];
-        rows.forEach((r, i) => {
-          let status = 'Unattempted';
-          let rowClass = 'result-unattempted';
+rows.forEach((r, i) => {
+  const review = reviewMap[r.questionId] || {};
 
-          if (r.reason === 'answered' && r.selectedIndex !== -1) {
-            status = 'Answered';
-            rowClass = 'result-correct';
-          } else if (r.reason === 'skipped' || r.reason === 'focus_lost' || r.reason === 'timed_out') {
-            status = r.reason.replace('_', ' ');
-          }
+  let status = 'Unattempted';
+  let rowClass = 'result-unattempted';
 
-          const tr = document.createElement('tr');
-          tr.className = rowClass;
-          tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${escapeHtml(r.question || '')}</td>
-            <td>${escapeHtml(r.selectedAnswer || 'No answer')}</td>
-            <td>Saved on server</td>
-            <td>${escapeHtml(status)}</td>
-          `;
-          tableBody.appendChild(tr);
-        });
+  if (review.isCorrect === true) {
+    status = 'Correct';
+    rowClass = 'result-correct';
+  } else if (review.isCorrect === false) {
+    status = 'Incorrect';
+    rowClass = 'result-wrong';
+  } else if (r.reason === 'skipped') {
+    status = 'Skipped';
+  } else if (r.reason === 'focus_lost') {
+    status = 'Focus lost';
+  } else if (r.reason === 'timed_out') {
+    status = 'Timed out';
+  }
+
+  const correctAnswerCell = SHOW_CORRECT_ANSWER
+    ? escapeHtml(review.correctAnswer || '')
+    : 'Hidden';
+
+  const tr = document.createElement('tr');
+  tr.className = rowClass;
+  tr.innerHTML = `
+    <td>${i + 1}</td>
+    <td>${escapeHtml(review.question || r.question || '')}</td>
+    <td>${escapeHtml(review.yourAnswer || r.selectedAnswer || 'No answer')}</td>
+    <td>${correctAnswerCell}</td>
+    <td>${escapeHtml(status)}</td>
+  `;
+  tableBody.appendChild(tr);
+});
+        
       } else {
         tableWrap.classList.add('hidden');
         tableBody.innerHTML = '';
