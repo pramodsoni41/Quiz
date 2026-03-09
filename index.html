@@ -36,7 +36,11 @@
     margin: 0 auto;
     padding: 20px;
   }
-
+.row .timer {
+  margin-left: auto;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -206,11 +210,19 @@
     font-weight:800;
     color:var(--accent2);
   }
+@media (max-width: 760px) {
+  .grid2, .answers { grid-template-columns:1fr; }
+  .qtext { font-size:1.25rem; }
 
-  @media (max-width: 760px) {
-    .grid2, .answers { grid-template-columns:1fr; }
-    .qtext { font-size:1.25rem; }
+  #timerPillTop {
+    display: none;
   }
+
+  .row .timer {
+    margin-left: auto;
+  }
+}
+
 </style>
 </head>
 
@@ -221,9 +233,13 @@
       <p class="muted" id="quizIntro">Fetching quiz from server...</p>
       <p class="muted" id="quizDue"></p>
 
-      <div class="notice" id="quizInstructions">
-        Marking scheme: +1 for correct, -0.25 for wrong, 0 for unattempted.
-      </div>
+	<div class="notice" id="quizInstructions">
+	  Enter your details and login password to begin.
+	</div>
+
+	<div class="notice" id="markingSchemeBox">
+	  Marking scheme: +1 for correct, -0.25 for wrong, 0 for unattempted.
+	</div>
 
       <div class="grid2">
         <div>
@@ -247,9 +263,7 @@
         </div>
       </div>
 
-      <div class="notice">
-        Marking scheme: +1 for correct, -0.25 for wrong, 0 for unattempted.
-      </div>
+
 
       <div class="row">
         <button id="startBtn" disabled>Loading Quiz...</button>
@@ -257,20 +271,24 @@
     </section>
 
     <section id="quiz" class="card hidden">
-      <div class="topbar">
-        <div class="pill" id="progressPill">Question 1 / 1</div>
-        <div class="pill timer" id="timerPill">15 s</div>
-        <div class="pill" id="studentPill">Student</div>
-      </div>
-      <div class="qtext nocopy" id="questionText"></div>
-      <div class="answers" id="answersBox"></div>
-      <div class="row">
-        <button id="submitAnswerBtn" disabled>Submit Answer</button>
-        <button id="skipBtn" class="secondary">Skip</button>
-        <button id="finishBtn" class="secondary">Finish Quiz</button>
-      </div>
-      <div class="notice" id="quizNotice">Select one answer.</div>
-    </section>
+  <div class="topbar">
+    <div class="pill" id="progressPill">Question 1 / 1</div>
+    <div class="pill timer" id="timerPillTop">15 s</div>
+    <div class="pill" id="studentPill">Student</div>
+  </div>
+
+  <div class="qtext nocopy" id="questionText"></div>
+  <div class="answers" id="answersBox"></div>
+
+  <div class="row">
+    <button id="submitAnswerBtn" disabled>Submit Answer</button>
+    <button id="skipBtn" class="secondary">Skip</button>
+    <button id="finishBtn" class="secondary">Finish Quiz</button>
+    <div class="pill timer" id="timerPillBottom">15 s</div>
+  </div>
+
+  <div class="notice" id="quizNotice">Select one answer.</div>
+</section>
 
     <section id="result" class="card hidden">
       <h2>Quiz Result</h2>
@@ -301,14 +319,15 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpyhewzaw4LQ5CIPmnOe8SEnpob6BrKmJKB7J9qSHQamU_1F6kUeklXCCKoLWYBao/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyVs1frVw4RabjJ7bd87VjDTke0XP84mFb8Y_3jLQBnZGhHpfJ4mFC381t2-HLJzw/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
     let SHOW_RESULT_TABLE = true;
     let ALLOW_MULTIPLE_ATTEMPTS = false;
     let QUIZ_STATUS = "OPEN";
-
+	let CORRECT_MARKS = 1;
+	let INCORRECT_MARKS = -0.25;
     const state = {
       sessionToken: null,
       student: null,
@@ -396,62 +415,78 @@
       };
     }
 
-    async function loadQuizMetaOnly() {
-      try {
-        const meta = await fetchQuizMeta();
+async function loadQuizMetaOnly() {
+  try {
+    const meta = await fetchQuizMeta();
 
-        if (meta.quizName) $('quizTitle').textContent = meta.quizName;
-        $('quizIntro').textContent = 'Enter your details and login password to begin.';
+    if (meta.quizName) $('quizTitle').textContent = meta.quizName;
+    $('quizIntro').textContent = 'Enter your details and login password to begin.';
 
-        if (meta.dueDate) {
-          $('quizDue').innerHTML = `<strong>Due Date:</strong> ${meta.dueDate}`;
-        }
-
-        if (meta.status) {
-          QUIZ_STATUS = String(meta.status).toUpperCase();
-        }
-
-        if (meta.instructions) {
-          $('quizInstructions').textContent = meta.instructions;
-        }
-
-        if (typeof meta.showAnswers === 'boolean') {
-          SHOW_INSTANT_FEEDBACK = meta.showAnswers;
-          SHOW_CORRECT_ANSWER = meta.showAnswers;
-        }
-        if (typeof meta.allowMultipleAttempts === 'boolean') {
-          ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
-        }
-        if (typeof meta.showSummary === 'boolean') {
-          SHOW_RESULT_TABLE = meta.showSummary;
-        }
-
-        if (QUIZ_STATUS !== "OPEN") {
-          $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
-          $('quizIntro').textContent = 'This quiz is currently closed.';
-          $('quizInstructions').textContent = 'Please contact the instructor.';
-          $('studentName').disabled = true;
-          $('regNo').disabled = true;
-          $('phoneNo').disabled = true;
-          $('studentPassword').disabled = true;
-          $('startBtn').disabled = true;
-          $('startBtn').textContent = 'Quiz Closed';
-          return;
-        }
-
-        $('studentName').disabled = false;
-        $('regNo').disabled = false;
-        $('phoneNo').disabled = false;
-        $('studentPassword').disabled = false;
-        $('startBtn').disabled = false;
-        $('startBtn').textContent = "Start Quiz";
-
-      } catch (err) {
-        console.error('Could not load quiz metadata:', err);
-        $('quizTitle').textContent = "Quiz could not load";
-        $('quizInstructions').textContent = "Please refresh the page.";
-      }
+    if (meta.dueDate) {
+      $('quizDue').innerHTML = `<strong>Due Date:</strong> ${meta.dueDate}`;
     }
+
+    if (meta.status) {
+      QUIZ_STATUS = String(meta.status).toUpperCase();
+    }
+
+    if (typeof meta.showAnswers === 'boolean') {
+      SHOW_CORRECT_ANSWER = meta.showAnswers;
+    }
+
+    if (typeof meta.showInstantFeedback === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
+    }
+
+    if (typeof meta.allowMultipleAttempts === 'boolean') {
+      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
+    }
+
+    if (typeof meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = meta.showSummary;
+    }
+
+    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
+      CORRECT_MARKS = meta.correctMarks;
+    }
+
+    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
+      INCORRECT_MARKS = meta.incorrectMarks;
+    }
+
+    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for wrong, 0 for unattempted.`;
+
+    $('quizInstructions').textContent =
+      meta.instructions || 'Enter your details and login password to begin.';
+    $('markingSchemeBox').textContent = markingText;
+
+    if (QUIZ_STATUS !== "OPEN") {
+      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
+      $('quizIntro').textContent = 'This quiz is currently closed.';
+      $('quizInstructions').textContent = 'Please contact the instructor.';
+      $('markingSchemeBox').textContent = markingText;
+      $('studentName').disabled = true;
+      $('regNo').disabled = true;
+      $('phoneNo').disabled = true;
+      $('studentPassword').disabled = true;
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = 'Quiz Closed';
+      return;
+    }
+
+    $('studentName').disabled = false;
+    $('regNo').disabled = false;
+    $('phoneNo').disabled = false;
+    $('studentPassword').disabled = false;
+    $('startBtn').disabled = false;
+    $('startBtn').textContent = "Start Quiz";
+
+  } catch (err) {
+    console.error('Could not load quiz metadata:', err);
+    $('quizTitle').textContent = "Quiz could not load";
+    $('quizInstructions').textContent = "Please refresh the page.";
+  }
+}
 
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
@@ -674,12 +709,23 @@
       $(id).classList.remove('hidden');
     }
 
-    function paintTimer() {
-      $('timerPill').textContent = `${state.timeLeft} s`;
-      $('timerPill').classList.remove('low', 'zero');
-      if (state.timeLeft <= 5 && state.timeLeft > 0) $('timerPill').classList.add('low');
-      if (state.timeLeft <= 0) $('timerPill').classList.add('zero');
+function paintTimer() {
+  const timers = [$('timerPillTop'), $('timerPillBottom')];
+
+  timers.forEach(timerEl => {
+    if (!timerEl) return;
+
+    timerEl.textContent = `${state.timeLeft} s`;
+    timerEl.classList.remove('low', 'zero');
+
+    if (state.timeLeft <= 5 && state.timeLeft > 0) {
+      timerEl.classList.add('low');
     }
+    if (state.timeLeft <= 0) {
+      timerEl.classList.add('zero');
+    }
+  });
+}
 
     function recordAndContinue(selectedIndex, timedOut) {
       if (state.isSubmitting) return;
@@ -862,8 +908,18 @@
         return;
       }
 
-      const serverResult = submitResult.result || {};
-      $('scoreText').textContent = `${serverResult.score || '0.00'} / ${serverResult.totalQuestions || 0}`;
+const serverResult = submitResult.result || {};
+console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
+console.log("serverResult =", serverResult);
+
+const reviewMap = {};
+(serverResult.review || []).forEach(item => {
+  reviewMap[item.questionId] = item;
+});
+
+      const totalQuestions = Number(serverResult.totalQuestions || 0);
+		const maxMarks = (totalQuestions * CORRECT_MARKS).toFixed(2);
+		$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
         <strong>Total Incorrect answers:</strong> ${serverResult.incorrectCount || 0}<br>
@@ -880,28 +936,42 @@
         tableBody.innerHTML = '';
 
         const rows = Array.isArray(state.responses) ? state.responses : [];
-        rows.forEach((r, i) => {
-          let status = 'Unattempted';
-          let rowClass = 'result-unattempted';
+rows.forEach((r, i) => {
+  const review = reviewMap[r.questionId] || {};
 
-          if (r.reason === 'answered' && r.selectedIndex !== -1) {
-            status = 'Answered';
-            rowClass = 'result-correct';
-          } else if (r.reason === 'skipped' || r.reason === 'focus_lost' || r.reason === 'timed_out') {
-            status = r.reason.replace('_', ' ');
-          }
+  let status = 'Unattempted';
+  let rowClass = 'result-unattempted';
 
-          const tr = document.createElement('tr');
-          tr.className = rowClass;
-          tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${escapeHtml(r.question || '')}</td>
-            <td>${escapeHtml(r.selectedAnswer || 'No answer')}</td>
-            <td>Saved on server</td>
-            <td>${escapeHtml(status)}</td>
-          `;
-          tableBody.appendChild(tr);
-        });
+  if (review.isCorrect === true) {
+    status = 'Correct';
+    rowClass = 'result-correct';
+  } else if (review.isCorrect === false) {
+    status = 'Incorrect';
+    rowClass = 'result-wrong';
+  } else if (r.reason === 'skipped') {
+    status = 'Skipped';
+  } else if (r.reason === 'focus_lost') {
+    status = 'Focus lost';
+  } else if (r.reason === 'timed_out') {
+    status = 'Timed out';
+  }
+
+  const correctAnswerCell = SHOW_CORRECT_ANSWER
+    ? escapeHtml(review.correctAnswer || '')
+    : 'Hidden';
+
+  const tr = document.createElement('tr');
+  tr.className = rowClass;
+  tr.innerHTML = `
+    <td>${i + 1}</td>
+    <td>${escapeHtml(review.question || r.question || '')}</td>
+    <td>${escapeHtml(review.yourAnswer || r.selectedAnswer || 'No answer')}</td>
+    <td>${correctAnswerCell}</td>
+    <td>${escapeHtml(status)}</td>
+  `;
+  tableBody.appendChild(tr);
+});
+        
       } else {
         tableWrap.classList.add('hidden');
         tableBody.innerHTML = '';
@@ -941,9 +1011,29 @@
 
           const fetched = await fetchQuestions();
 
+		if (typeof fetched.meta.showAnswers === 'boolean') {
+		  SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
+		}
+		if (typeof fetched.meta.showInstantFeedback === 'boolean') {
+		  SHOW_INSTANT_FEEDBACK = fetched.meta.showInstantFeedback;
+		}
+		if (typeof fetched.meta.showSummary === 'boolean') {
+		  SHOW_RESULT_TABLE = fetched.meta.showSummary;
+		}
+		if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks)) {
+		  CORRECT_MARKS = fetched.meta.correctMarks;
+		}
+		if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) {
+		  INCORRECT_MARKS = fetched.meta.incorrectMarks;
+		}
+
+		$('markingSchemeBox').textContent =
+		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for wrong, 0 for unattempted.`;
+		  
+		  
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
           if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
-          if (fetched.meta.instructions) $('quizInstructions').textContent = fetched.meta.instructions;
+          $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
 
           state.student = {
             name: loginResult.name || name,
