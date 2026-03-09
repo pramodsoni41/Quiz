@@ -238,7 +238,7 @@
 	</div>
 
 	<div class="notice" id="markingSchemeBox">
-	  Marking scheme: *** for correct, *** for wrong, 0 for unattempted.
+	  Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
 	</div>
 
       <div class="grid2">
@@ -319,7 +319,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwz6naTTHDGWdkgnuaW2TZ0ST6eQk3pKCr8qawNY6-GIgS2J1Tqq0tYXUpSgBsqluQ/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo-ksHH1Summ0J4TFI9qfkpFsVvtZpBx-HiC-Sb59WZr2k-eqHGAOSv4mELPNg3qg/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -327,7 +327,7 @@
     let ALLOW_MULTIPLE_ATTEMPTS = false;
     let QUIZ_STATUS = "OPEN";
 	let CORRECT_MARKS = 1;
-	let INCORRECT_MARKS = -0.25;
+	let INCORRECT_MARKS = 0;
     const state = {
       sessionToken: null,
       student: null,
@@ -454,7 +454,7 @@ async function loadQuizMetaOnly() {
       INCORRECT_MARKS = meta.incorrectMarks;
     }
 
-    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for wrong, 0 for unattempted.`;
+    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
 
     $('quizInstructions').textContent =
       meta.instructions || 'Enter your details and login password to begin.';
@@ -1028,7 +1028,7 @@ rows.forEach((r, i) => {
 		}
 
 		$('markingSchemeBox').textContent =
-		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for wrong, 0 for unattempted.`;
+		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
 		  
 		  
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
