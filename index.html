@@ -511,8 +511,10 @@ async function loadQuizMetaOnly() {
       const s = sec % 60;
       return `${m}m ${s}s`;
     }
-
-    function ensureAntiCheatPanel() {
+function ensureAntiCheatPanel() {
+  return { innerHTML: "" }; // disable visible panel
+}
+<!--     function ensureAntiCheatPanel() {
       let panel = $('antiCheatPanel');
       if (!panel) {
         panel = document.createElement('div');
@@ -531,7 +533,7 @@ async function loadQuizMetaOnly() {
           box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         `;
         document.body.appendChild(panel);
-      }
+      } -->
       return panel;
     }
 
