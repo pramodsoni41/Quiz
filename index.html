@@ -893,13 +893,11 @@ const serverResult = submitResult.result || {};
 console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
 console.log("serverResult =", serverResult);
 
-const reviewMap = {};
-(serverResult.review || []).forEach(item => {
-  reviewMap[item.questionId] = item;
-});
+
 
       const totalQuestions = Number(serverResult.totalQuestions || 0);
-		const maxMarks = (totalQuestions * CORRECT_MARKS).toFixed(2);
+		const maxMarks = serverResult.maxMarks || '0.00';
+$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
 		$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
@@ -916,10 +914,8 @@ const reviewMap = {};
         tableWrap.classList.remove('hidden');
         tableBody.innerHTML = '';
 
-        const rows = Array.isArray(state.responses) ? state.responses : [];
-rows.forEach((r, i) => {
-  const review = reviewMap[r.questionId] || {};
-
+        const rows = Array.isArray(serverResult.review) ? serverResult.review : [];
+rows.forEach((review, i) => {
   let status = 'Unattempted';
   let rowClass = 'result-unattempted';
 
@@ -929,12 +925,6 @@ rows.forEach((r, i) => {
   } else if (review.isCorrect === false) {
     status = 'Incorrect';
     rowClass = 'result-wrong';
-  } else if (r.reason === 'skipped') {
-    status = 'Skipped';
-  } else if (r.reason === 'focus_lost') {
-    status = 'Focus lost';
-  } else if (r.reason === 'timed_out') {
-    status = 'Timed out';
   }
 
   const correctAnswerCell = SHOW_CORRECT_ANSWER
@@ -945,8 +935,8 @@ rows.forEach((r, i) => {
   tr.className = rowClass;
   tr.innerHTML = `
     <td>${i + 1}</td>
-    <td>${escapeHtml(review.question || r.question || '')}</td>
-    <td>${escapeHtml(review.yourAnswer || r.selectedAnswer || 'No answer')}</td>
+    <td>${escapeHtml(review.question || '')}</td>
+    <td>${escapeHtml(review.yourAnswer || 'No answer')}</td>
     <td>${correctAnswerCell}</td>
     <td>${escapeHtml(status)}</td>
   `;
