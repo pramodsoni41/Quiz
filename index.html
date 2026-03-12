@@ -1054,7 +1054,13 @@ rows.forEach((review, i) => {
       recordAndContinue(-1, false);
     };
 
-    $('finishBtn').onclick = finishQuiz;
+    $('finishBtn').onclick = () => {
+	  const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
+	  
+	  if (confirmFinish) {
+		finishQuiz();
+	  }
+	};
     $('restartBtn').onclick = () => location.reload();
 
     document.addEventListener("DOMContentLoaded", () => {
