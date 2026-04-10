@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Class Quiz | Pro Edition</title>
+  
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+
 <style>
   :root {
     --bg1:#f4f6fb; --bg2:#e9eef8; --card:#ffffff;
@@ -30,12 +42,38 @@
     width:100%; padding:12px; border-radius:12px; border:1px solid var(--border);
     background:var(--inputbg); font-size:1rem;
   }
+  
+  /* Global Button Style (Main Action Buttons) */
   button {
     padding:12px 24px; border-radius:12px; border:none; cursor:pointer;
     font-size:1rem; font-weight:700; background:var(--accent); color:#fff;
   }
   button:disabled { opacity:0.5; cursor:not-allowed; }
   button.secondary { background:#e2e8f0; color:var(--text); }
+
+  /* Specific Quiz Option Buttons - Overriding Global Color */
+  button.answer {
+    text-align: left;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--soft);
+    cursor: pointer;
+    color: var(--text) !important; /* Force text to dark blue/black */
+    font-weight: 500;
+    min-height: 84px;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  
+  button.answer.selected {
+    border-color: var(--accent);
+    background: #dbeafe;
+    color: var(--accent) !important;
+  }
+  
+  button.answer:hover:not(:disabled) { background:#eff6ff; }
+
   .topbar { display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .pill { padding:8px 16px; border-radius:999px; background:var(--soft); border:1px solid var(--border); font-weight:700; }
   .timer { font-size:1.2rem; }
@@ -43,25 +81,6 @@
   .timer.zero { color: var(--danger); }
   .qtext { font-size:1.5rem; line-height:1.4; margin:20px 0; font-weight:800; }
   .answers { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  
-	.answer {
-	  text-align: left;
-	  padding: 16px;
-	  border-radius: 16px;
-	  border: 1px solid var(--border);
-	  background: var(--soft);
-	  cursor: pointer;
-	  /* ADD THIS LINE BELOW */
-	  color: var(--text) !important; 
-	  min-height: 84px;
-	}
-  
-.answer.selected {
-  border-color: var(--accent);
-  background: #dbeafe;
-  color: var(--accent) !important; /* Optional: makes selected text blue */
-}
-  .answer:hover:not(:disabled) { background:#eff6ff; }
   .notice { margin-top:14px; padding:12px; border-radius:12px; background:var(--soft2); border:1px solid var(--border); color:var(--muted); }
   table { width:100%; border-collapse:collapse; margin-top:20px; }
   th, td { border-bottom:1px solid var(--border); padding:12px 8px; text-align:left; }
@@ -136,7 +155,6 @@
       antiCheat: { hiddenCount: 0, blurCount: 0, fsExit: 0, started: false }
     };
 
-    // --- NETWORKING ---
     async function postJSON(payload) {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
@@ -161,7 +179,6 @@
       return { status: 'offline' };
     }
 
-    // --- CORE LOGIC ---
     async function loadQuizMetaOnly() {
       try {
         const data = await postJSON({ action: 'getQuizMeta' });
@@ -170,12 +187,10 @@
         $('markingSchemeBox').textContent = `Marking: +${m.correctMarks} Correct | ${m.incorrectMarks} Incorrect`;
         CORRECT_MARKS = m.correctMarks; INCORRECT_MARKS = m.incorrectMarks;
         SHOW_CORRECT_ANSWER = m.showAnswers; SHOW_RESULT_TABLE = m.showSummary;
-        
         $('startBtn').disabled = false;
         $('startBtn').textContent = "Start Quiz";
       } catch (e) {
         $('quizTitle').textContent = "Connection Error";
-        $('quizIntro').textContent = "Please check your internet and refresh the page.";
       }
     }
 
@@ -188,7 +203,7 @@
       $('questionText').textContent = q.question;
       $('answersBox').innerHTML = '';
       $('submitAnswerBtn').disabled = true;
-      $('submitAnswerBtn').textContent = "Submit Answer"; // Reset text
+      $('submitAnswerBtn').textContent = "Submit Answer";
 
       q.answers.forEach((ans, idx) => {
         const b = document.createElement('button');
@@ -202,6 +217,11 @@
         };
         $('answersBox').appendChild(b);
       });
+
+      // TRIGGER LATEX RENDERING
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        MathJax.typesetPromise();
+      }
 
       state.timeLeft = q.time;
       startTimer();
@@ -219,13 +239,11 @@
     function recordAndContinue(idx, timedOut) {
       clearInterval(state.timer);
       const q = state.active[state.current];
-      
       state.responses.push({
         questionId: q.questionId,
         selectedIndex: idx >= 0 ? q.optionMap[idx] : -1,
         timedOut: timedOut
       });
-
       state.current++;
       if (state.current < state.active.length) renderQuestion();
       else finishQuiz();
@@ -235,30 +253,25 @@
       if (state.isSubmitting) return;
       state.isSubmitting = true;
       clearInterval(state.timer);
-
       showSection('result');
       $('scoreText').textContent = "Syncing...";
-
       const payload = {
         sessionToken: state.sessionToken,
         student: state.student,
         responses: state.responses,
         antiCheat: state.antiCheat
       };
-
       const res = await sendResultToGoogleSheet(payload);
-      if (res.status === 'submitted') {
-        renderFinalUI(res.result);
-      } else {
+      if (res.status === 'submitted') renderFinalUI(res.result);
+      else {
         $('scoreText').textContent = "Offline Safe";
-        $('resultMeta').textContent = "Network failed, but your data is saved in browser memory. Inform your teacher.";
+        $('resultMeta').textContent = "Submission failed. Data is saved locally.";
       }
     }
 
     function renderFinalUI(res) {
       $('scoreText').textContent = `${res.score} / ${res.maxMarks}`;
       $('resultMeta').innerHTML = `Correct: ${res.correctCount} | Incorrect: ${res.incorrectCount} | Accuracy: ${res.percentage}%`;
-      
       if (SHOW_RESULT_TABLE) {
         $('resultTableWrap').classList.remove('hidden');
         const body = $('resultTableBody');
@@ -269,69 +282,59 @@
           row.innerHTML = `<td>${i+1}</td><td>${r.question}</td><td>${r.yourAnswer}</td><td>${SHOW_CORRECT_ANSWER ? r.correctAnswer : '---'}</td><td>${r.isCorrect ? '✅' : '❌'}</td>`;
           body.appendChild(row);
         });
+        if (window.MathJax && window.MathJax.typesetPromise) MathJax.typesetPromise();
       }
     }
 
-    // --- UPDATED START EVENT ---
     $('startBtn').onclick = async () => {
       const btn = $('startBtn');
       const reg = $('regNo').value.trim();
       const pass = $('studentPassword').value.trim();
-      
-      if (!reg || !pass) return alert("Roll No and Password are required");
+      if (!reg || !pass) return alert("Required fields missing");
 
-      // 1. Lock the UI to prevent multiple requests
       btn.disabled = true;
       btn.textContent = "Verifying Login...";
 
       try {
         const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
-        
         if (login.status !== 'ok') {
-          // Re-enable if login fails
           alert("Login Failed: " + login.status);
           btn.disabled = false;
           btn.textContent = "Start Quiz";
           return;
         }
-        
         btn.textContent = "Fetching Questions...";
         state.sessionToken = login.sessionToken;
         state.student = { name: login.name, regNo: reg };
-        
         const qData = await postJSON({ action: 'getQuestions', sessionToken: state.sessionToken });
         state.active = qData.questions.map(q => ({
             ...q,
             answers: [q.options.A, q.options.B, q.options.C, q.options.D],
             optionMap: [0,1,2,3] 
         }));
-
         showSection('quiz');
         renderQuestion();
-      } catch (e) { 
-        // Re-enable on network error
-        alert("Connection Error. Please try again.");
+      } catch (e) {
         btn.disabled = false;
         btn.textContent = "Start Quiz";
+        alert("Network Error");
       }
     };
 
     $('submitAnswerBtn').onclick = () => {
-      // Small feedback on submission
       $('submitAnswerBtn').disabled = true;
       $('submitAnswerBtn').textContent = "Saving...";
       recordAndContinue(state.selectedIndex, false);
     };
 
     $('skipBtn').onclick = () => recordAndContinue(-1, false);
-    $('finishBtn').onclick = () => confirm("Finish now? You cannot change your answers after this.") && finishQuiz();
+    $('finishBtn').onclick = () => confirm("Finish now?") && finishQuiz();
     $('restartBtn').onclick = () => location.reload();
 
     function showSection(id) {
       ['setup', 'quiz', 'result'].forEach(s => $(s).classList.add('hidden'));
       $(id).classList.remove('hidden');
     }
-
     document.addEventListener("DOMContentLoaded", loadQuizMetaOnly);
   </script>
 </body>
