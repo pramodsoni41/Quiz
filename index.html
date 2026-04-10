@@ -144,7 +144,41 @@
     grid-template-columns:1fr 1fr;
     gap:14px;
   }
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.9);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
+.loaderBox {
+  text-align: center;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #e2e8f0;
+  border-top: 5px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+.loadingText {
+  margin-top: 10px;
+  font-weight: 700;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
   .answer {
     text-align:left;
     padding:16px;
@@ -225,7 +259,12 @@
 
 </style>
 </head>
-
+<div id="loadingOverlay" class="hidden">
+  <div class="loaderBox">
+    <div class="spinner"></div>
+    <div class="loadingText">Starting Quiz...</div>
+  </div>
+</div>
 <body>
   <div class="container">
     <section id="setup" class="card">
@@ -243,12 +282,12 @@
 
       <div class="grid2">
         <div>
-          <label for="studentName">Student Name</label>
-          <input id="studentName" placeholder="Enter name" disabled />
+          <label for="studentName">Roll No.</label>
+          <input id="studentName" placeholder="Enter Roll No." disabled />
         </div>
         <div>
-          <label for="regNo">Registration No</label>
-          <input id="regNo" placeholder="Enter registration number" disabled />
+          <label for="regNo">ID No</label>
+          <input id="regNo" placeholder="Enter ID number" disabled />
         </div>
       </div>
 
@@ -319,7 +358,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysGgNXf7TZPrmGK_3qNruTUYI3TXGJ7TVcURAPZlhz_Nfyj7QafViGxjfx9ym2qNo/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6sDGk8EgPh8lMVMiuKhjw9POA2Lmj7lD_RzYDbjA14bkzub-wyk5Uh6g0TNkgUuo/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -950,6 +989,11 @@ rows.forEach((review, i) => {
     }
 
     $('startBtn').onclick = async () => {
+	// 🔒 Disable button immediately
+  $('startBtn').disabled = true;
+
+  // 🔒 Show loading overlay
+  $('loadingOverlay').classList.remove('hidden');
       const name = $('studentName').value.trim();
       const regNo = $('regNo').value.trim();
       const phoneNo = $('phoneNo').value.trim();
@@ -1027,7 +1071,7 @@ rows.forEach((review, i) => {
           state.antiCheat.log = [];
           state.antiCheat.started = true;
           state.antiCheat.leftScreen = false;
-
+	$('loadingOverlay').classList.add('hidden');
           showSection('quiz');
           updateAntiCheatPanel();
           await enterQuizFullscreen();
