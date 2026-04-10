@@ -10,6 +10,7 @@ const state = {
   active: [],
   current: 0,
   timer: null,
+  quizStarted: false,
   timeLeft: 0,
   responses: [],
   selectedIndex: null,
@@ -48,6 +49,9 @@ function safeSkipQuestion() {
 }
 
 document.addEventListener("visibilitychange", () => {
+
+  if (!state.quizStarted) return;   // ✅ CRITICAL FIX
+
   if (document.hidden) {
 
     state.antiCheat.hiddenCount++;
@@ -117,12 +121,14 @@ $('startBtn').onclick = async () => {
     alert("Login failed");
     return;
   }
-
+  state.quizStarted = true;   // ✅ IMPORTANT
   state.sessionToken = login.sessionToken;
   state.student = { name: login.name, regNo: reg };
 
-  const qData = await postJSON({ action: 'getQuestions' });
-
+const qData = await postJSON({
+  action: 'getQuestions',
+  sessionToken: state.sessionToken   // ✅ REQUIRED
+});
   state.active = qData.questions.map(q => ({
     ...q,
     answers: [q.options.A, q.options.B, q.options.C, q.options.D]
@@ -140,7 +146,10 @@ function renderQuestion() {
 
   const q = state.active[state.current];
   state.selectedIndex = null;
-
+	if (!state.active.length) {
+	  $('quizNotice').textContent = "No questions loaded!";
+	  return;
+	}
   $('questionText').textContent = q.question;
   $('answersBox').innerHTML = '';
   $('submitAnswerBtn').disabled = true;
