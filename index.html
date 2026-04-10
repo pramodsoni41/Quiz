@@ -401,7 +401,7 @@
       questionStartTime: null,
       currentQuestionReason: null,
       questionViolationHandled: false,
-
+	violationTimer: null,
       antiCheat: {
         hiddenCount: 0,
         blurCount: 0,
@@ -701,16 +701,24 @@ function ensureAntiCheatPanel() {
 
         startAwayTimer();
         registerViolation(type);
-        forfeitCurrentQuestion();
+        state.violationTimer = setTimeout(() => {
+  forfeitCurrentQuestion();   // skip AFTER 2 sec
+}, 2000);
       }
 
-      function handleReturn() {
-        if (!state.antiCheat.started) return;
-        if (!state.antiCheat.leftScreen) return;
+function handleReturn() {
+  if (!state.antiCheat.started) return;
+  if (!state.antiCheat.leftScreen) return;
 
-        state.antiCheat.leftScreen = false;
-        stopAwayTimer();
-      }
+  state.antiCheat.leftScreen = false;
+  stopAwayTimer();
+
+  // ✅ CLEAR buffer timer
+  if (state.violationTimer) {
+    clearTimeout(state.violationTimer);
+    state.violationTimer = null;
+  }
+}
 
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
