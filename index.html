@@ -1,284 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quiz</title>
+
+<style>
+.hidden { display:none; }
+button { padding:10px; margin:5px; }
+.answer { display:block; width:100%; text-align:left; }
+#quizNotice { margin-top:10px; }
+</style>
+
+</head>
+
 <body>
+
+<!-- SETUP -->
+<div id="setup">
+  <h2>Login</h2>
+  <input id="regNo" placeholder="Roll No"><br><br>
+  <input id="studentPassword" placeholder="Password" type="password"><br><br>
+  <button id="startBtn">Start Quiz</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="hidden">
+  <h3 id="questionText"></h3>
+  <div id="answersBox"></div>
+  <div id="timerPillTop"></div>
+  <div id="quizNotice"></div>
+  <button id="submitAnswerBtn">Submit</button>
+  <button id="skipBtn">Skip</button>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="hidden">
+  <h2 id="scoreText"></h2>
+  <p id="resultMeta"></p>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
 const $ = (id) => document.getElementById(id);
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyAcragw-0-dNOyfGqMJaxCGy2Q7OubLpMz_kEmWIZVxnrGOAIvUP08iux7AyMthI/exec";
 
+// 🔗 PUT YOUR SCRIPT URL
+const URL = "https://script.google.com/macros/s/AKfycbwyAcragw-0-dNOyfGqMJaxCGy2Q7OubLpMz_kEmWIZVxnrGOAIvUP08iux7AyMthI/exec";
+
+// STATE
 const state = {
-  sessionToken: null,
-  student: null,
-  active: [],
-  current: 0,
-  timer: null,
-  quizStarted: false,
-  timeLeft: 0,
-  responses: [],
-  selectedIndex: null,
-  penalty: 0,
-  isTransitioning: false,
-  antiCheat: { hiddenCount: 0, blurCount: 0, fsExit: 0 }
+  sessionToken:null,
+  questions:[],
+  current:0,
+  selectedIndex:null,
+  responses:[],
+  timer:null,
+  timeLeft:0,
+  quizStarted:false,
+  penalty:0,
+  antiCheat:{hiddenCount:0}
 };
 
 //////////////////////////////////////////////////
-// SAFE WARNING UI
+// SAFE WARNING
 //////////////////////////////////////////////////
 
-function showWarning(msg) {
+function showWarning(msg){
   const box = $('quizNotice');
-  if (!box) return;
-
+  if(!box) return;
   box.textContent = msg;
-  box.style.background = "#fee2e2";
-  box.style.color = "#dc2626";
-
-  setTimeout(() => {
-    box.textContent = "Select an answer to proceed.";
-    box.style.background = "";
-    box.style.color = "";
-  }, 2000);
 }
 
 //////////////////////////////////////////////////
-// SAFE SKIP
+// PROCTORING (SAFE)
 //////////////////////////////////////////////////
 
-function safeSkipQuestion() {
-  if (state.isTransitioning) return;
+document.addEventListener("visibilitychange", ()=>{
+  if(!state.quizStarted) return;
 
-  state.isTransitioning = true;
-  clearInterval(state.timer);
-
-  setTimeout(() => {
-    recordAndNext(-1, true);
-    state.isTransitioning = false;
-  }, 300);
-}
-
-//////////////////////////////////////////////////
-// PROCTORING
-//////////////////////////////////////////////////
-
-document.addEventListener("visibilitychange", () => {
-
-  if (!state.quizStarted) return;
-
-  if (document.hidden) {
-
+  if(document.hidden){
     state.antiCheat.hiddenCount++;
-    const c = state.antiCheat.hiddenCount;
 
-    if (c === 1) {
-      showWarning("⚠️ Warning 1/3");
-    } else if (c === 2) {
-      showWarning("❌ Warning 2/3 (-1 mark)");
+    if(state.antiCheat.hiddenCount===1){
+      showWarning("⚠️ Warning 1");
+    }
+    else if(state.antiCheat.hiddenCount===2){
+      showWarning("❌ -1 mark");
       state.penalty++;
-    } else {
-      showWarning("🚫 Question skipped");
-      safeSkipQuestion();
+    }
+    else{
+      showWarning("🚫 Skipped");
+      nextQuestion(-1,true);
     }
   }
 });
-
-window.addEventListener("blur", () => {
-  if (state.quizStarted) state.antiCheat.blurCount++;
-});
-
-document.addEventListener("fullscreenchange", () => {
-  if (state.quizStarted && !document.fullscreenElement) {
-    state.antiCheat.fsExit++;
-    showWarning("Fullscreen exited!");
-  }
-});
-
-// Disable copy/paste
-document.addEventListener("copy", e => e.preventDefault());
-document.addEventListener("paste", e => e.preventDefault());
-document.addEventListener("contextmenu", e => e.preventDefault());
 
 //////////////////////////////////////////////////
 // API
 //////////////////////////////////////////////////
 
-async function postJSON(payload) {
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
+async function post(data){
+  try{
+    const res = await fetch(URL,{
+      method:"POST",
+      body:JSON.stringify(data)
     });
     return await res.json();
-  } catch (e) {
-    console.error("API error", e);
+  }catch(e){
+    console.error(e);
+    alert("Server error");
     return {};
   }
 }
 
 //////////////////////////////////////////////////
-// START QUIZ
+// START
 //////////////////////////////////////////////////
 
 const startBtn = $('startBtn');
-if (startBtn) {
-startBtn.onclick = async () => {
+
+if(startBtn){
+startBtn.onclick = async ()=>{
 
   const reg = $('regNo').value.trim();
   const pass = $('studentPassword').value.trim();
 
-  if (!reg || !pass) {
-    alert("Fill required fields");
+  if(!reg || !pass){
+    alert("Enter details");
     return;
   }
 
-  await document.documentElement.requestFullscreen();
-
-  const login = await postJSON({
-    action: 'validateLogin',
-    regNo: reg,
-    password: pass
+  const login = await post({
+    action:"validateLogin",
+    regNo:reg,
+    password:pass
   });
 
-  if (login.status !== 'ok') {
+  if(login.status!=="ok"){
     alert("Login failed");
     return;
   }
 
   state.sessionToken = login.sessionToken;
-  state.student = { name: login.name, regNo: reg };
 
-  // ✅ FETCH QUESTIONS
-  const qData = await postJSON({
-    action: 'getQuestions',
-    sessionToken: state.sessionToken
+  const qData = await post({
+    action:"getQuestions",
+    sessionToken:state.sessionToken
   });
 
-  if (!qData.questions || qData.questions.length === 0) {
-    alert("No questions received from server");
+  if(!qData.questions || qData.questions.length===0){
+    alert("No questions");
     return;
   }
 
-  state.active = qData.questions.map(q => ({
-    ...q,
-    answers: [q.options.A, q.options.B, q.options.C, q.options.D]
-  }));
-
+  state.questions = qData.questions;
   state.quizStarted = true;
 
-  showSection('quiz');
-  renderQuestion();
+  show("quiz");
+  render();
+
 };
 }
 
 //////////////////////////////////////////////////
-// RENDER QUESTION
+// RENDER
 //////////////////////////////////////////////////
 
-function renderQuestion() {
+function render(){
 
-  if (!state.active || state.active.length === 0) {
-    $('quizNotice').textContent = "No questions loaded!";
-    return;
-  }
-
-  const q = state.active[state.current];
+  const q = state.questions[state.current];
   state.selectedIndex = null;
 
   $('questionText').textContent = q.question;
-  $('answersBox').innerHTML = '';
-  $('submitAnswerBtn').disabled = true;
+  $('answersBox').innerHTML = "";
 
-  q.answers.forEach((ans, i) => {
-    const b = document.createElement('button');
-    b.className = 'answer';
-    b.textContent = ans;
+  ["A","B","C","D"].forEach((k,i)=>{
+    const btn = document.createElement("button");
+    btn.className="answer";
+    btn.textContent = q.options[k];
 
-    b.onclick = () => {
+    btn.onclick = ()=>{
       state.selectedIndex = i;
-      document.querySelectorAll('.answer').forEach(el => el.classList.remove('selected'));
-      b.classList.add('selected');
-      $('submitAnswerBtn').disabled = false;
     };
 
-    $('answersBox').appendChild(b);
+    $('answersBox').appendChild(btn);
   });
 
-  state.timeLeft = q.time;
-  startTimer();
+  startTimer(q.time || 15);
 }
 
 //////////////////////////////////////////////////
 // TIMER
 //////////////////////////////////////////////////
 
-function startTimer() {
+function startTimer(t){
   clearInterval(state.timer);
+  state.timeLeft = t;
 
-  state.timer = setInterval(() => {
+  state.timer = setInterval(()=>{
     state.timeLeft--;
-    $('timerPillTop').textContent = state.timeLeft + " s";
+    $('timerPillTop').textContent = state.timeLeft+" s";
 
-    if (state.timeLeft <= 0) {
-      recordAndNext(-1, true);
+    if(state.timeLeft<=0){
+      nextQuestion(-1,true);
     }
-  }, 1000);
+  },1000);
 }
 
 //////////////////////////////////////////////////
-// RECORD
+// NEXT
 //////////////////////////////////////////////////
 
-function recordAndNext(idx, timeout) {
+function nextQuestion(idx,timeout){
 
   clearInterval(state.timer);
 
   state.responses.push({
-    questionId: "Q" + (state.current + 1),
-    selectedIndex: idx,
-    timedOut: timeout
+    q:state.current,
+    ans:idx,
+    t:timeout
   });
 
   state.current++;
 
-  if (state.current < state.active.length) {
-    renderQuestion();
-  } else {
-    finishQuiz();
+  if(state.current < state.questions.length){
+    render();
+  }else{
+    finish();
   }
 }
 
 //////////////////////////////////////////////////
-// BUTTONS
+// BUTTONS (SAFE)
 //////////////////////////////////////////////////
 
-$('submitAnswerBtn').onclick = () => {
-  recordAndNext(state.selectedIndex, false);
-};
+const submitBtn = $('submitAnswerBtn');
+if(submitBtn){
+  submitBtn.onclick = ()=>{
+    nextQuestion(state.selectedIndex,false);
+  };
+}
 
-$('skipBtn').onclick = () => recordAndNext(-1, false);
+const skipBtn = $('skipBtn');
+if(skipBtn){
+  skipBtn.onclick = ()=> nextQuestion(-1,false);
+}
 
 //////////////////////////////////////////////////
 // FINISH
 //////////////////////////////////////////////////
 
-async function finishQuiz() {
+async function finish(){
 
-  clearInterval(state.timer);
-  showSection('result');
+  show("result");
 
-  const res = await postJSON({
-    action: 'submitQuiz',
-    sessionToken: state.sessionToken,
-    student: state.student,
-    responses: state.responses,
-    antiCheat: state.antiCheat,
-    penalty: state.penalty
+  const res = await post({
+    action:"submitQuiz",
+    sessionToken:state.sessionToken,
+    responses:state.responses,
+    penalty:state.penalty,
+    antiCheat:state.antiCheat
   });
 
-  if (res.status === 'submitted') {
-    $('scoreText').textContent = `${res.result.score} / ${res.result.maxMarks}`;
+  if(res.status==="submitted"){
+    $('scoreText').textContent = res.result.score;
     $('resultMeta').textContent =
-      `Correct: ${res.result.correctCount}, Incorrect: ${res.result.incorrectCount}`;
-  } else {
-    $('scoreText').textContent = "Submission Error";
+      "Correct: "+res.result.correctCount;
+  }else{
+    $('scoreText').textContent = "Error";
   }
 }
 
@@ -286,11 +275,16 @@ async function finishQuiz() {
 // UI
 //////////////////////////////////////////////////
 
-function showSection(id) {
-  ['setup','quiz','result'].forEach(s => $(s).classList.add('hidden'));
-  $(id).classList.remove('hidden');
+function show(id){
+  ['setup','quiz','result'].forEach(s=>{
+    const el = $(s);
+    if(el) el.classList.add("hidden");
+  });
+  $(id).classList.remove("hidden");
 }
 
 });
 </script>
+
 </body>
+</html>
