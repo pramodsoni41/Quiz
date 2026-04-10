@@ -138,7 +138,23 @@
     font-weight:800;
     color:var(--text);
   }
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #111827;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
 
+#toast.show {
+  opacity: 1;
+}
   .answers {
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -267,6 +283,7 @@
     <div class="loadingText">Starting Quiz...</div>
   </div>
 </div>
+<div id="toast" class="hidden"></div>
   <div class="container">
     <section id="setup" class="card">
       <h1 id="quizTitle">Loading quiz...</h1>
@@ -350,9 +367,10 @@
         </table>
       </div>
 
-      <div class="row">
-        <button id="restartBtn" class="secondary">Restart</button>
-      </div>
+<div class="row">
+  <button id="retryBtn" class="good hidden">Retry Submission</button>
+  <button id="restartBtn" class="secondary">Restart</button>
+</div>
     </section>
   </div>
 
@@ -763,6 +781,21 @@ function paintTimer() {
         b.classList.remove('selected');
       });
 
+	let reasonText = "";
+
+	if (state.currentQuestionReason === 'skipped') {
+	  reasonText = "Skipped by user";
+	}
+	else if (state.currentQuestionReason === 'timed_out') {
+	  reasonText = "Time expired";
+	}
+	else if (state.currentQuestionReason === 'focus_lost') {
+	  reasonText = "Left screen (auto skipped)";
+	}
+
+	if (selectedIndex === -1) {
+	  showToast(reasonText);   // ✅ THIS WAS MISSING
+	}
       $('submitAnswerBtn').disabled = true;
       $('finishBtn').disabled = true;
       $('skipBtn').disabled = true;
@@ -812,7 +845,17 @@ function paintTimer() {
         }
       }, SHOW_INSTANT_FEEDBACK ? 1000 : 500);
     }
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  t.classList.add('show');
 
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.classList.add('hidden'), 300);
+  }, 2000);
+}
     function startTimer() {
       clearInterval(state.timer);
       state.timer = setInterval(() => {
@@ -877,17 +920,23 @@ function paintTimer() {
       }
     }
 
-    async function sendResultToGoogleSheet(resultObj) {
-      try {
-        return await postJSON({
-          action: 'submitQuiz',
-          ...resultObj
-        });
-      } catch (err) {
-        console.error('Failed to send result to Google Sheet:', err);
-        return { status: 'error' };
-      }
-    }
+async function sendResultToGoogleSheet(resultObj) {
+  for (let i = 0; i < 5; i++) {
+    try {
+      const res = await postJSON({
+        action: 'submitQuiz',
+        ...resultObj
+      });
+
+      if (res.status === 'submitted') return res;
+
+    } catch (err) {}
+
+    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+  }
+
+  return { status: 'failed' };
+}
 
     function escapeHtml(str) {
       return String(str)
@@ -921,13 +970,19 @@ function paintTimer() {
       const panel = $('antiCheatPanel');
       if (panel) panel.style.display = 'none';
 
-      if (submitResult.status !== 'submitted') {
-        $('scoreText').textContent = `Submission Error`;
-        $('resultMeta').innerHTML = `Could not submit quiz. Status: ${escapeHtml(submitResult.status || 'error')}`;
-        $('resultTableWrap').classList.add('hidden');
-        $('resultTableBody').innerHTML = '';
-        return;
-      }
+if (submitResult.status !== 'submitted') {
+$('retryBtn').classList.remove('hidden');   // ✅ SHOW button
+  localStorage.setItem("quiz_backup", JSON.stringify(resultObj));
+
+  $('scoreText').textContent = `Saved Locally ⚠️`;
+  $('resultMeta').innerHTML = `
+    Submission failed due to server load.<br>
+    Your responses are saved locally.<br>
+    Please inform instructor or retry later.
+  `;
+
+  return;
+}
 
 const serverResult = submitResult.result || {};
 console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
@@ -1118,7 +1173,22 @@ rows.forEach((review, i) => {
 	  }
 	};
     $('restartBtn').onclick = () => location.reload();
+$('retryBtn').onclick = async () => {
+  const backup = localStorage.getItem("quiz_backup");
+  if (!backup) return alert("No backup found");
 
+  const resultObj = JSON.parse(backup);
+
+  const res = await sendResultToGoogleSheet(resultObj);
+
+  if (res.status === 'submitted') {
+    alert("Submitted successfully!");
+    localStorage.removeItem("quiz_backup");
+    location.reload();
+  } else {
+    alert("Still failing. Try later.");
+  }
+};
     document.addEventListener("DOMContentLoaded", () => {
       setupAntiCheatListeners();
       loadQuizMetaOnly();
