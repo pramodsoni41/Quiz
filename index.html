@@ -43,8 +43,24 @@
   .timer.zero { color: var(--danger); }
   .qtext { font-size:1.5rem; line-height:1.4; margin:20px 0; font-weight:800; }
   .answers { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .answer { text-align:left; padding:16px; border-radius:16px; border:1px solid var(--border); background:var(--soft); cursor:pointer; }
-  .answer.selected { border-color: var(--accent); background: #dbeafe; }
+  
+	.answer {
+	  text-align: left;
+	  padding: 16px;
+	  border-radius: 16px;
+	  border: 1px solid var(--border);
+	  background: var(--soft);
+	  cursor: pointer;
+	  /* ADD THIS LINE BELOW */
+	  color: var(--text) !important; 
+	  min-height: 84px;
+	}
+  
+.answer.selected {
+  border-color: var(--accent);
+  background: #dbeafe;
+  color: var(--accent) !important; /* Optional: makes selected text blue */
+}
   .answer:hover:not(:disabled) { background:#eff6ff; }
   .notice { margin-top:14px; padding:12px; border-radius:12px; background:var(--soft2); border:1px solid var(--border); color:var(--muted); }
   table { width:100%; border-collapse:collapse; margin-top:20px; }
