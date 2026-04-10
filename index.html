@@ -259,13 +259,14 @@
 
 </style>
 </head>
+
+<body>
 <div id="loadingOverlay" class="hidden">
   <div class="loaderBox">
     <div class="spinner"></div>
     <div class="loadingText">Starting Quiz...</div>
   </div>
 </div>
-<body>
   <div class="container">
     <section id="setup" class="card">
       <h1 id="quizTitle">Loading quiz...</h1>
@@ -989,6 +990,7 @@ rows.forEach((review, i) => {
     }
 
     $('startBtn').onclick = async () => {
+	if (state.sessionToken !== null) return;   // ✅ ADD THIS
 	// 🔒 Disable button immediately
   $('startBtn').disabled = true;
 
@@ -1001,6 +1003,8 @@ rows.forEach((review, i) => {
 
       if (!name || !regNo || !password) {
         alert('Please enter name, registration number, and password.');
+		  $('loadingOverlay').classList.add('hidden');  // ✅ ADD
+  $('startBtn').disabled = false;               // ✅ ADD
         return;
       }
 
@@ -1010,14 +1014,20 @@ rows.forEach((review, i) => {
 
         if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
           alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+		    $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
           return;
         }
         if (loginResult.status === 'closed') {
           alert('Quiz is currently closed.');
+		  $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
           return;
         }
         if (loginResult.status === 'invalid') {
           alert('Invalid registration number or password.');
+		  $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
           return;
         }
 
@@ -1081,6 +1091,8 @@ rows.forEach((review, i) => {
       } catch (err) {
         console.error(err);
         alert('Unable to start quiz.');
+		$('loadingOverlay').classList.add('hidden');   // ✅ MUST
+  $('startBtn').disabled = false;                // ✅ MUST
       }
     };
 
