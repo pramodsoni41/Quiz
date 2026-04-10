@@ -3,231 +3,1087 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Class Quiz | Proctored Edition</title>
-  
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <script>
-    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
-  </script>
+  <title>Class Quiz</title>
+<style>
+  :root {
+    --bg1:#f4f6fb;
+    --bg2:#e9eef8;
+    --card:#ffffff;
+    --accent:#2563eb;
+    --accent2:#16a34a;
+    --text:#0f172a;
+    --muted:#475569;
+    --danger:#dc2626;
+    --warn:#d97706;
+    --border:rgba(0,0,0,0.08);
+    --inputbg:#ffffff;
+    --soft:#f8fafc;
+    --soft2:#f1f5f9;
+  }
 
-  <style>
-    :root { --bg1:#f4f6fb; --bg2:#e9eef8; --card:#ffffff; --accent:#2563eb; --accent2:#16a34a; --text:#0f172a; --muted:#475569; --danger:#dc2626; --warn:#d97706; --border:rgba(0,0,0,0.08); --soft:#f8fafc; }
-    body { margin:0; font-family: 'Segoe UI', sans-serif; color:var(--text); background: linear-gradient(135deg, var(--bg1), var(--bg2)); min-height:100vh; user-select:none; }
-    .container { max-width: 980px; margin: 0 auto; padding: 20px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
-    .hidden { display:none !important; }
-    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
-    input { width:100%; padding:12px; border-radius:12px; border:1px solid var(--border); font-size:1rem; margin-bottom:12px; }
-    button { padding:12px 24px; border-radius:12px; border:none; cursor:pointer; font-weight:700; background:var(--accent); color:#fff; }
-    button:disabled { opacity:0.5; }
-    button.answer { text-align: left; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--soft); width: 100%; margin-bottom: 10px; transition: 0.2s; color: var(--text); }
-    button.answer.selected { border-color: var(--accent); background: #dbeafe; color: var(--accent); }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-    .pill { padding:8px 16px; border-radius:999px; background:var(--soft); border:1px solid var(--border); font-size:0.9rem; font-weight:700; }
-    .qtext { font-size:1.5rem; line-height:1.4; margin:20px 0; font-weight:800; }
-    .notice { margin-top:14px; padding:12px; border-radius:12px; background:#f1f5f9; border:1px solid var(--border); color:var(--muted); }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border-bottom:1px solid var(--border); padding:12px 8px; text-align:left; }
-    .result-correct td { background: #f0fdf4; } .result-wrong td { background: #fef2f2; }
-    .score { font-size:2.5rem; font-weight:800; color:var(--accent2); }
-    @media (max-width: 760px) { .grid2 { grid-template-columns:1fr; } }
-  </style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin:0;
+    font-family: Arial, Helvetica, sans-serif;
+    color:var(--text);
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    min-height:100vh;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+.row .timer {
+  margin-left: auto;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+  }
+
+  h1,h2,h3,p { margin-top:0; }
+
+  .muted { color: var(--muted); }
+  .hidden { display:none !important; }
+
+  .grid2 {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+  }
+
+  label {
+    display:block;
+    font-size:0.95rem;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  input {
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--inputbg);
+    color:var(--text);
+    font-size:1rem;
+  }
+
+  input::placeholder { color:#94a3b8; }
+
+  button {
+    padding:12px 18px;
+    border-radius:12px;
+    border:none;
+    cursor:pointer;
+    font-size:1rem;
+    font-weight:700;
+    background:var(--accent);
+    color:#ffffff;
+  }
+
+  button.secondary {
+    background:#e2e8f0;
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+
+  button.good {
+    background: var(--accent2);
+    color:#ffffff;
+  }
+
+  button:disabled {
+    opacity:0.55;
+    cursor:not-allowed;
+  }
+
+  .topbar {
+    display:flex;
+    gap:12px;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+
+  .pill {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius:999px;
+    background:var(--soft);
+    border:1px solid var(--border);
+    font-weight:700;
+    color:var(--text);
+  }
+
+  .timer { font-size:1.3rem; }
+  .timer.low { color: var(--warn); }
+  .timer.zero { color: var(--danger); }
+
+  .qtext {
+    font-size:1.55rem;
+    line-height:1.45;
+    margin:18px 0 20px;
+    font-weight:800;
+    color:var(--text);
+  }
+
+  .answers {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+
+  .answer {
+    text-align:left;
+    padding:16px;
+    border-radius:16px;
+    border:1px solid var(--border);
+    background:var(--soft);
+    color:var(--text);
+    min-height:84px;
+  }
+
+  .answer.selected {
+    border-color: var(--accent);
+    background: #dbeafe;
+  }
+
+  .result-correct td { background: #f0fdf4; }
+  .result-wrong td { background: #fef2f2; }
+  .result-unattempted td { background: #f8fafc; }
+
+  .nocopy {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+
+  .answer:hover {
+    border-color: rgba(37,99,235,0.55);
+    background:#eff6ff;
+  }
+
+  .row {
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:18px;
+  }
+
+  .notice {
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:var(--soft2);
+    border:1px solid var(--border);
+    color:var(--muted);
+  }
+
+  table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-size:0.95rem;
+  }
+
+  th, td {
+    border-bottom:1px solid var(--border);
+    padding:10px 8px;
+    text-align:left;
+    color:var(--text);
+  }
+
+  .score {
+    font-size:2rem;
+    font-weight:800;
+    color:var(--accent2);
+  }
+@media (max-width: 760px) {
+  .grid2, .answers { grid-template-columns:1fr; }
+  .qtext { font-size:1.25rem; }
+
+  #timerPillTop {
+    display: none;
+  }
+
+  .row .timer {
+    margin-left: auto;
+  }
+}
+
+</style>
 </head>
 
 <body>
   <div class="container">
     <section id="setup" class="card">
-      <h1 id="quizTitle">Connecting...</h1>
-      <p class="muted" id="quizIntro">Initialising secure connection to server.</p>
-      <div class="pill" id="markingSchemeBox">Waiting for marking scheme...</div>
-      
-      <div class="grid2" style="margin-top:20px;">
-        <input id="regNo" placeholder="Registration No" />
-        <input id="studentPassword" type="password" placeholder="Access Password" />
+      <h1 id="quizTitle">Loading quiz...</h1>
+      <p class="muted" id="quizIntro">Fetching quiz from server...</p>
+      <p class="muted" id="quizDue"></p>
+
+	<div class="notice" id="quizInstructions">
+	  Enter your details and login password to begin.
+	</div>
+
+	<div class="notice" id="markingSchemeBox">
+	  Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
+	</div>
+
+      <div class="grid2">
+        <div>
+          <label for="studentName">Student Name</label>
+          <input id="studentName" placeholder="Enter name" disabled />
+        </div>
+        <div>
+          <label for="regNo">Registration No</label>
+          <input id="regNo" placeholder="Enter registration number" disabled />
+        </div>
       </div>
-      <div style="margin-top:20px;"><button id="startBtn" disabled>Checking Status...</button></div>
+
+      <div class="grid2" style="margin-top:12px;">
+        <div>
+          <label for="phoneNo">Phone No</label>
+          <input id="phoneNo" placeholder="Optional" disabled />
+        </div>
+        <div>
+          <label for="studentPassword">Password</label>
+          <input id="studentPassword" type="text" placeholder="Enter password" disabled />
+        </div>
+      </div>
+
+
+
+      <div class="row">
+        <button id="startBtn" disabled>Loading Quiz...</button>
+      </div>
     </section>
 
     <section id="quiz" class="card hidden">
-      <div class="topbar">
-        <div class="pill" id="progressPill">Q1 / -</div>
-        <div class="pill timer" id="timerPillTop">-- s</div>
-        <div class="pill" id="studentPill">Student</div>
-      </div>
-      <div class="qtext" id="questionText"></div>
-      <div id="answersBox"></div>
-      <div class="notice" id="quizNotice">Proctoring active. Do not leave this tab.</div>
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button id="submitAnswerBtn" disabled>Submit Answer</button>
-        <button id="skipBtn" style="background:#e2e8f0; color:#000;">Skip</button>
-      </div>
-    </section>
+  <div class="topbar">
+    <div class="pill" id="progressPill">Question 1 / 1</div>
+    <div class="pill timer" id="timerPillTop">15 s</div>
+    <div class="pill" id="studentPill">Student</div>
+  </div>
+
+  <div class="qtext nocopy" id="questionText"></div>
+  <div class="answers" id="answersBox"></div>
+
+  <div class="row">
+    <button id="submitAnswerBtn" disabled>Submit Answer</button>
+    <button id="skipBtn" class="secondary">Skip</button>
+    <button id="finishBtn" class="secondary">Finish Quiz</button>
+    <div class="pill timer" id="timerPillBottom">15 s</div>
+  </div>
+
+  <div class="notice" id="quizNotice">Select one answer.</div>
+</section>
 
     <section id="result" class="card hidden">
       <h2>Quiz Result</h2>
-      <div class="score" id="scoreText">Syncing...</div>
-      <div id="resultMeta"></div>
-      <div id="resultTableWrap">
+      <div class="score" id="scoreText">0.00 / 0</div>
+      <p class="muted" id="resultMeta"></p>
+
+      <div id="resultTableWrap" class="hidden">
         <table>
-          <thead><tr><th>#</th><th>Question</th><th>Your Ans</th><th>Correct</th><th>Status</th></tr></thead>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Question</th>
+              <th>Your Answer</th>
+              <th>Correct Answer</th>
+              <th>Status</th>
+            </tr>
+          </thead>
           <tbody id="resultTableBody"></tbody>
         </table>
       </div>
-      <button onclick="location.reload()" style="margin-top:20px; background:#64748b;">Restart</button>
+
+      <div class="row">
+        <button id="restartBtn" class="secondary">Restart</button>
+      </div>
     </section>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
+
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysGgNXf7TZPrmGK_3qNruTUYI3TXGJ7TVcURAPZlhz_Nfyj7QafViGxjfx9ym2qNo/exec";
 
-    let SHOW_CORRECT_ANSWER = false, SHOW_RESULT_TABLE = true;
+    let SHOW_INSTANT_FEEDBACK = false;   // safer default
+    let SHOW_CORRECT_ANSWER = false;     // safer default
+    let SHOW_RESULT_TABLE = true;
+    let ALLOW_MULTIPLE_ATTEMPTS = false;
+    let QUIZ_STATUS = "OPEN";
+	let CORRECT_MARKS = 1;
+	let INCORRECT_MARKS = 0;
     const state = {
-      sessionToken: null, student: null, active: [], current: 0,
-      timer: null, timeLeft: 0, responses: [], isSubmitting: false,
-      antiCheat: { hiddenCount: 0, blurCount: 0, fsExit: 0, started: false }
+      sessionToken: null,
+      student: null,
+      questions: [],
+      active: [],
+      current: 0,
+      timer: null,
+      timeLeft: 0,
+      score: 0,
+      responses: [],
+      isSubmitting: false,
+      selectedIndex: null,
+      questionStartTime: null,
+      currentQuestionReason: null,
+      questionViolationHandled: false,
+
+      antiCheat: {
+        hiddenCount: 0,
+        blurCount: 0,
+        fullscreenExitCount: 0,
+        awayStart: null,
+        totalAwayMs: 0,
+        log: [],
+        started: false,
+        leftScreen: false
+      }
     };
 
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
     async function postJSON(payload) {
-      const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-      return await res.json();
-    }
-
-    // 1. PROCTORING ENGINE (THE MISSING PIECE)
-    function setupProctoring() {
-      document.addEventListener("visibilitychange", () => {
-        if (document.hidden && state.antiCheat.started) {
-          state.antiCheat.hiddenCount++;
-          triggerViolation("Tab Switched");
-        }
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(payload)
       });
-      window.addEventListener("blur", () => {
-        if (state.antiCheat.started) {
-          state.antiCheat.blurCount++;
-          triggerViolation("Focus Lost");
-        }
-      });
-      document.addEventListener("fullscreenchange", () => {
-        if (!document.fullscreenElement && state.antiCheat.started) {
-          state.antiCheat.fsExit++;
-          triggerViolation("Fullscreen Exited");
-        }
-      });
-    }
 
-    function triggerViolation(msg) {
-      $('quizNotice').innerHTML = `<b style="color:var(--danger)">⚠️ VIOLATION: ${msg}. Question skipped!</b>`;
-      recordAndContinue(-1);
-    }
-
-    // 2. CORE LOGIC
-    async function loadQuizMeta() {
+      const text = await res.text();
+      let data;
       try {
-        const data = await postJSON({ action: 'getQuizMeta' });
-        $('quizTitle').textContent = data.meta.quizName;
-        $('markingSchemeBox').textContent = `Correct: +${data.meta.correctMarks} | Incorrect: ${data.meta.incorrectMarks}`;
-        SHOW_CORRECT_ANSWER = data.meta.showAnswers;
-        SHOW_RESULT_TABLE = data.meta.showSummary;
-        $('startBtn').disabled = false;
-        $('startBtn').textContent = "Start Proctored Quiz";
-      } catch (e) { $('quizTitle').textContent = "Connection Error"; }
+        data = JSON.parse(text);
+      } catch (err) {
+        throw new Error("Server did not return valid JSON: " + text);
+      }
+      return data;
     }
 
-    function renderQuestion() {
-      const q = state.active[state.current];
-      state.selectedIndex = -1;
-      $('progressPill').textContent = `Q ${state.current + 1} / ${state.active.length}`;
-      $('questionText').textContent = q.question;
-      $('answersBox').innerHTML = '';
-      $('submitAnswerBtn').disabled = true;
+    async function fetchQuizMeta() {
+      const data = await postJSON({ action: 'getQuizMeta' });
+      if (data.status !== 'ok') {
+        throw new Error(data.message || 'Could not fetch quiz metadata');
+      }
+      return data.meta || {};
+    }
 
-      Object.entries(q.options).forEach(([key, text], idx) => {
-        const b = document.createElement('button');
-        b.className = 'answer';
-        b.innerHTML = `<strong>${key}.</strong> ${text}`;
-        b.onclick = () => {
-          state.selectedIndex = idx;
-          document.querySelectorAll('.answer').forEach(el => el.classList.remove('selected'));
-          b.classList.add('selected');
-          $('submitAnswerBtn').disabled = false;
-        };
-        $('answersBox').appendChild(b);
+    async function fetchQuestions() {
+      const data = await postJSON({
+        action: 'getQuestions',
+        sessionToken: state.sessionToken
       });
-      if (window.MathJax) MathJax.typesetPromise();
-      state.timeLeft = q.time;
-      startTimer();
+
+      if (data.status !== 'ok') {
+        throw new Error(data.message || JSON.stringify(data));
+      }
+
+      const questions = (data.questions || []).map(q => ({
+        questionId: q.questionId,
+        question: q.question,
+        answers: [q.options.A, q.options.B, q.options.C, q.options.D],
+        time: Number(q.time) || 15
+      }));
+
+      return {
+        meta: data.meta || {},
+        questions
+      };
+    }
+
+async function loadQuizMetaOnly() {
+  try {
+    const meta = await fetchQuizMeta();
+
+    if (meta.quizName) $('quizTitle').textContent = meta.quizName;
+    $('quizIntro').textContent = 'Enter your details and login password to begin.';
+
+    if (meta.dueDate) {
+      $('quizDue').innerHTML = `<strong>Due Date:</strong> ${meta.dueDate}`;
+    }
+
+    if (meta.status) {
+      QUIZ_STATUS = String(meta.status).toUpperCase();
+    }
+
+    if (typeof meta.showAnswers === 'boolean') {
+      SHOW_CORRECT_ANSWER = meta.showAnswers;
+    }
+
+    if (typeof meta.showInstantFeedback === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
+    }
+
+    if (typeof meta.allowMultipleAttempts === 'boolean') {
+      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
+    }
+
+    if (typeof meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = meta.showSummary;
+    }
+
+    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
+      CORRECT_MARKS = meta.correctMarks;
+    }
+
+    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
+      INCORRECT_MARKS = meta.incorrectMarks;
+    }
+
+    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+
+    $('quizInstructions').textContent =
+      meta.instructions || 'Enter your details and login password to begin.';
+    $('markingSchemeBox').textContent = markingText;
+
+    if (QUIZ_STATUS !== "OPEN") {
+      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
+      $('quizIntro').textContent = 'This quiz is currently closed.';
+      $('quizInstructions').textContent = 'Please contact the instructor.';
+      $('markingSchemeBox').textContent = markingText;
+      $('studentName').disabled = true;
+      $('regNo').disabled = true;
+      $('phoneNo').disabled = true;
+      $('studentPassword').disabled = true;
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = 'Quiz Closed';
+      return;
+    }
+
+    $('studentName').disabled = false;
+    $('regNo').disabled = false;
+    $('phoneNo').disabled = false;
+    $('studentPassword').disabled = false;
+    $('startBtn').disabled = false;
+    $('startBtn').textContent = "Start Quiz";
+
+  } catch (err) {
+    console.error('Could not load quiz metadata:', err);
+    $('quizTitle').textContent = "Quiz could not load";
+    $('quizInstructions').textContent = "Please refresh the page.";
+  }
+}
+
+    function prepareQuestions(rawQuestions) {
+      const shuffledQuestions = shuffle(rawQuestions).map(q => {
+        const options = q.answers.map((text, idx) => ({ text, originalIndex: idx }));
+        const shuffledOptions = shuffle(options);
+
+        return {
+          questionId: q.questionId,
+          question: q.question,
+          answers: shuffledOptions.map(o => o.text),
+          optionMap: shuffledOptions.map(o => o.originalIndex), // shuffled index -> original index
+          time: q.time
+        };
+      });
+
+      return shuffledQuestions;
+    }
+
+    function formatMs(ms) {
+      const sec = Math.floor(ms / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}m ${s}s`;
+    }
+function ensureAntiCheatPanel() {
+  return { innerHTML: "" }; // disable visible panel
+}
+
+
+    function updateAntiCheatPanel() {
+      const ac = state.antiCheat;
+      const panel = ensureAntiCheatPanel();
+      panel.innerHTML = `
+        <strong>Monitoring</strong><br>
+        Tab/minimize: ${ac.hiddenCount}<br>
+        Focus lost: ${ac.blurCount}<br>
+        Fullscreen exits: ${ac.fullscreenExitCount}<br>
+        Away time: ${formatMs(ac.totalAwayMs)}
+      `;
+    }
+
+    function startAwayTimer() {
+      const ac = state.antiCheat;
+      if (ac.awayStart === null) {
+        ac.awayStart = Date.now();
+      }
+    }
+
+    function stopAwayTimer() {
+      const ac = state.antiCheat;
+      if (ac.awayStart !== null) {
+        ac.totalAwayMs += Date.now() - ac.awayStart;
+        ac.awayStart = null;
+        updateAntiCheatPanel();
+      }
+    }
+
+    function registerViolation(type) {
+      const ac = state.antiCheat;
+
+      ac.log.push({
+        type,
+        time: new Date().toISOString(),
+        questionNo: state.current + 1,
+        questionId: state.active[state.current]?.questionId || null
+      });
+
+      updateAntiCheatPanel();
+
+      const totalViolations =
+        ac.hiddenCount + ac.blurCount + ac.fullscreenExitCount;
+
+      if (totalViolations === 1) {
+        $('quizNotice').textContent = 'Warning: You moved away from the quiz screen.';
+      } else if (totalViolations === 3) {
+        $('quizNotice').textContent = 'Second warning: stay on the quiz screen.';
+      } else if (totalViolations >= 10) {
+        $('quizNotice').textContent = 'Too many screen violations. Submitting quiz...';
+        setTimeout(() => {
+          if (!state.isSubmitting) finishQuiz();
+        }, 500);
+      }
+    }
+
+    async function enterQuizFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (err) {
+        console.log('Fullscreen request failed:', err);
+      }
+    }
+
+    function getAntiCheatReport() {
+      const ac = state.antiCheat;
+      let totalAwayMs = ac.totalAwayMs;
+      if (ac.awayStart !== null) {
+        totalAwayMs += Date.now() - ac.awayStart;
+      }
+
+      return {
+        hiddenCount: ac.hiddenCount,
+        blurCount: ac.blurCount,
+        fullscreenExitCount: ac.fullscreenExitCount,
+        totalAwaySeconds: Math.round(totalAwayMs / 1000),
+        log: ac.log
+      };
+    }
+
+    function forfeitCurrentQuestion() {
+      if (!state.antiCheat.started) return;
+      if (state.isSubmitting) return;
+      if (state.questionViolationHandled) return;
+      if ($('quiz').classList.contains('hidden')) return;
+
+      state.questionViolationHandled = true;
+      state.currentQuestionReason = 'focus_lost';
+
+      clearInterval(state.timer);
+
+      $('quizNotice').textContent =
+        'You left the quiz screen. This question has been marked unattempted.';
+
+      const answerButtons = [...document.querySelectorAll('.answer')];
+      answerButtons.forEach(btn => btn.disabled = true);
+
+      $('submitAnswerBtn').disabled = true;
+      $('finishBtn').disabled = true;
+      $('skipBtn').disabled = true;
+
+      setTimeout(() => {
+        if (!state.isSubmitting) {
+          recordAndContinue(-1, false);
+        }
+      }, 600);
+    }
+
+    function setupAntiCheatListeners() {
+      if (window.__antiCheatAttached) return;
+      window.__antiCheatAttached = true;
+
+      function handleLeave(type) {
+        if (!state.antiCheat.started || $('quiz').classList.contains('hidden')) return;
+        if (state.antiCheat.leftScreen) return;
+
+        state.antiCheat.leftScreen = true;
+
+        if (type === 'hidden') {
+          state.antiCheat.hiddenCount += 1;
+        } else if (type === 'blur') {
+          state.antiCheat.blurCount += 1;
+        }
+
+        startAwayTimer();
+        registerViolation(type);
+        forfeitCurrentQuestion();
+      }
+
+      function handleReturn() {
+        if (!state.antiCheat.started) return;
+        if (!state.antiCheat.leftScreen) return;
+
+        state.antiCheat.leftScreen = false;
+        stopAwayTimer();
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          handleLeave('hidden');
+        } else {
+          handleReturn();
+        }
+      });
+
+      window.addEventListener('blur', () => {
+        if (!document.hidden) {
+          handleLeave('blur');
+        }
+      });
+
+      window.addEventListener('focus', () => {
+        if (!document.hidden) {
+          handleReturn();
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!state.antiCheat.started || $('quiz').classList.contains('hidden')) return;
+
+        if (!document.fullscreenElement) {
+          state.antiCheat.fullscreenExitCount += 1;
+          registerViolation('fullscreen_exit');
+          forfeitCurrentQuestion();
+        }
+      });
+    }
+
+    function showSection(id) {
+      ['setup', 'quiz', 'result'].forEach(sec => $(sec).classList.add('hidden'));
+      $(id).classList.remove('hidden');
+    }
+
+function paintTimer() {
+  const timers = [$('timerPillTop'), $('timerPillBottom')];
+
+  timers.forEach(timerEl => {
+    if (!timerEl) return;
+
+    timerEl.textContent = `${state.timeLeft} s`;
+    timerEl.classList.remove('low', 'zero');
+
+    if (state.timeLeft <= 5 && state.timeLeft > 0) {
+      timerEl.classList.add('low');
+    }
+    if (state.timeLeft <= 0) {
+      timerEl.classList.add('zero');
+    }
+  });
+}
+
+    function recordAndContinue(selectedIndex, timedOut) {
+      if (state.isSubmitting) return;
+
+      clearInterval(state.timer);
+      const q = state.active[state.current];
+      const timeSpentSeconds = state.questionStartTime
+        ? Math.round((Date.now() - state.questionStartTime) / 1000)
+        : null;
+
+      const answerButtons = [...document.querySelectorAll('.answer')];
+      answerButtons.forEach((b) => {
+        b.disabled = true;
+        b.classList.remove('selected');
+      });
+
+      $('submitAnswerBtn').disabled = true;
+      $('finishBtn').disabled = true;
+      $('skipBtn').disabled = true;
+
+      // Convert shuffled index back to original A/B/C/D index expected by server
+      let originalSelectedIndex = -1;
+      if (selectedIndex >= 0 && q.optionMap && q.optionMap[selectedIndex] != null) {
+        originalSelectedIndex = q.optionMap[selectedIndex];
+      }
+
+      state.responses.push({
+        questionId: q.questionId,
+        questionNo: state.current + 1,
+        question: q.question,
+        selectedIndex: originalSelectedIndex,
+        selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+        timedOut,
+        reason:
+          state.currentQuestionReason ||
+          (timedOut ? 'timed_out' : (selectedIndex === -1 ? 'skipped' : 'answered')),
+        timeSpentSeconds
+      });
+
+      if (SHOW_INSTANT_FEEDBACK) {
+        if (selectedIndex === -1 && !timedOut) {
+          $('quizNotice').textContent = 'Question skipped.';
+        } else if (timedOut) {
+          $('quizNotice').textContent = 'Time up.';
+        } else {
+          $('quizNotice').textContent = 'Answer submitted.';
+        }
+      } else {
+        $('quizNotice').textContent =
+          selectedIndex === -1
+            ? (timedOut ? 'Time up.' : 'Question skipped.')
+            : 'Answer submitted.';
+      }
+
+      setTimeout(() => {
+        if (state.isSubmitting) return;
+
+        state.current += 1;
+        if (state.current < state.active.length) {
+          renderQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, SHOW_INSTANT_FEEDBACK ? 1000 : 500);
     }
 
     function startTimer() {
       clearInterval(state.timer);
       state.timer = setInterval(() => {
-        state.timeLeft--;
-        $('timerPillTop').textContent = state.timeLeft + " s";
-        if (state.timeLeft <= 0) recordAndContinue(-1);
+        state.timeLeft -= 1;
+        paintTimer();
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timer);
+          state.currentQuestionReason = 'timed_out';
+          recordAndContinue(-1, true);
+        }
       }, 1000);
     }
 
-    function recordAndContinue(idx) {
-      clearInterval(state.timer);
-      state.responses.push({ questionId: state.active[state.current].questionId, selectedIndex: idx });
-      state.current++;
-      if (state.current < state.active.length) renderQuestion();
-      else finishQuiz();
+    function renderQuestion() {
+      const q = state.active[state.current];
+      state.selectedIndex = null;
+      state.questionStartTime = Date.now();
+      state.currentQuestionReason = null;
+      state.questionViolationHandled = false;
+
+      $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
+      $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
+      $('questionText').textContent = q.question;
+      $('answersBox').innerHTML = '';
+      $('quizNotice').textContent = 'Select one answer and click Submit Answer.';
+      $('finishBtn').disabled = false;
+      $('skipBtn').disabled = false;
+      $('submitAnswerBtn').disabled = true;
+
+      q.answers.forEach((ans, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'answer nocopy';
+        btn.type = 'button';
+        btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${ans}`;
+
+        btn.onclick = () => {
+          state.selectedIndex = idx;
+          document.querySelectorAll('.answer').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          $('submitAnswerBtn').disabled = false;
+        };
+
+        $('answersBox').appendChild(btn);
+      });
+
+      state.timeLeft = q.time;
+      paintTimer();
+      startTimer();
+    }
+
+    async function validateStudentLogin(regNo, password) {
+      try {
+        return await postJSON({
+          action: 'validateLogin',
+          regNo,
+          password
+        });
+      } catch (err) {
+        console.error('Login validation failed:', err);
+        alert('Login validation failed: ' + err.message);
+        return { status: 'error' };
+      }
+    }
+
+    async function sendResultToGoogleSheet(resultObj) {
+      try {
+        return await postJSON({
+          action: 'submitQuiz',
+          ...resultObj
+        });
+      } catch (err) {
+        console.error('Failed to send result to Google Sheet:', err);
+        return { status: 'error' };
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     async function finishQuiz() {
       if (state.isSubmitting) return;
       state.isSubmitting = true;
+
+      clearInterval(state.timer);
       state.antiCheat.started = false;
-      if (document.fullscreenElement) document.exitFullscreen();
-      
+      stopAwayTimer();
+
+      const resultObj = {
+        sessionToken: state.sessionToken,
+        student: state.student,
+        responses: state.responses,
+        antiCheat: getAntiCheatReport()
+      };
+
+      const submitResult = await sendResultToGoogleSheet(resultObj);
+      console.log("Submit result:", submitResult);
+
       showSection('result');
-      const res = await postJSON({ action: 'submitQuiz', sessionToken: state.sessionToken, responses: state.responses, antiCheat: state.antiCheat });
-      
-      if (res.status === 'submitted') {
-        const r = res.result;
-        $('scoreText').textContent = `${r.score} / ${r.maxMarks}`;
-        $('resultMeta').innerHTML = `Correct: ${r.correctCount} | Violations: ${state.antiCheat.hiddenCount + state.antiCheat.blurCount}`;
-        if (SHOW_RESULT_TABLE) {
-          const body = $('resultTableBody');
-          r.review.forEach((item, i) => {
-            const row = body.insertRow();
-            row.className = item.isCorrect ? 'result-correct' : 'result-wrong';
-            row.innerHTML = `<td>${i+1}</td><td>${item.question}</td><td>${item.yourAnswer}</td><td>${SHOW_CORRECT_ANSWER ? item.correctAnswer : '---'}</td><td>${item.isCorrect ? '✅' : '❌'}</td>`;
-          });
-        }
+
+      const panel = $('antiCheatPanel');
+      if (panel) panel.style.display = 'none';
+
+      if (submitResult.status !== 'submitted') {
+        $('scoreText').textContent = `Submission Error`;
+        $('resultMeta').innerHTML = `Could not submit quiz. Status: ${escapeHtml(submitResult.status || 'error')}`;
+        $('resultTableWrap').classList.add('hidden');
+        $('resultTableBody').innerHTML = '';
+        return;
+      }
+
+const serverResult = submitResult.result || {};
+console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
+console.log("serverResult =", serverResult);
+
+
+
+      const totalQuestions = Number(serverResult.totalQuestions || 0);
+		const maxMarks = serverResult.maxMarks || '0.00';
+$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
+		$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
+      $('resultMeta').innerHTML = `
+        <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
+        <strong>Total Incorrect answers:</strong> ${serverResult.incorrectCount || 0}<br>
+        <strong>Total Unattempted:</strong> ${serverResult.unattemptedCount || 0}<br>
+        <strong>Final Marks:</strong> ${serverResult.score || '0.00'}<br>
+        <strong>Percentage:</strong> ${serverResult.percentage || '0.00'}%
+      `;
+
+      const tableWrap = $('resultTableWrap');
+      const tableBody = $('resultTableBody');
+
+      if (SHOW_RESULT_TABLE) {
+        tableWrap.classList.remove('hidden');
+        tableBody.innerHTML = '';
+
+        const rows = Array.isArray(serverResult.review) ? serverResult.review : [];
+rows.forEach((review, i) => {
+  let status = 'Unattempted';
+  let rowClass = 'result-unattempted';
+
+  if (review.isCorrect === true) {
+    status = 'Correct';
+    rowClass = 'result-correct';
+  } else if (review.isCorrect === false) {
+    status = 'Incorrect';
+    rowClass = 'result-wrong';
+  }
+
+  const correctAnswerCell = SHOW_CORRECT_ANSWER
+    ? escapeHtml(review.correctAnswer || '')
+    : 'Hidden';
+
+  const tr = document.createElement('tr');
+  tr.className = rowClass;
+  tr.innerHTML = `
+    <td>${i + 1}</td>
+    <td>${escapeHtml(review.question || '')}</td>
+    <td>${escapeHtml(review.yourAnswer || 'No answer')}</td>
+    <td>${correctAnswerCell}</td>
+    <td>${escapeHtml(status)}</td>
+  `;
+  tableBody.appendChild(tr);
+});
+        
+      } else {
+        tableWrap.classList.add('hidden');
+        tableBody.innerHTML = '';
       }
     }
 
     $('startBtn').onclick = async () => {
-      const reg = $('regNo').value.trim();
-      const pass = $('studentPassword').value.trim();
-      const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
-      
-      if (login.status === 'ok') {
-        state.sessionToken = login.sessionToken;
-        state.student = { name: login.name, regNo: reg };
-        $('studentPill').textContent = login.name;
-        const qData = await postJSON({ action: 'getQuestions', sessionToken: state.sessionToken });
-        state.active = qData.questions;
-        state.antiCheat.started = true;
-        document.documentElement.requestFullscreen();
-        showSection('quiz');
-        renderQuestion();
-      } else alert("Login Failed");
+      const name = $('studentName').value.trim();
+      const regNo = $('regNo').value.trim();
+      const phoneNo = $('phoneNo').value.trim();
+      const password = $('studentPassword').value.trim();
+
+      if (!name || !regNo || !password) {
+        alert('Please enter name, registration number, and password.');
+        return;
+      }
+
+      try {
+        const loginResult = await validateStudentLogin(regNo, password);
+        console.log('loginResult =', loginResult);
+
+        if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
+          alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+          return;
+        }
+        if (loginResult.status === 'closed') {
+          alert('Quiz is currently closed.');
+          return;
+        }
+        if (loginResult.status === 'invalid') {
+          alert('Invalid registration number or password.');
+          return;
+        }
+
+        if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTIPLE_ATTEMPTS)) {
+          state.sessionToken = loginResult.sessionToken || null;
+
+          const fetched = await fetchQuestions();
+
+		if (typeof fetched.meta.showAnswers === 'boolean') {
+		  SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
+		}
+		if (typeof fetched.meta.showInstantFeedback === 'boolean') {
+		  SHOW_INSTANT_FEEDBACK = fetched.meta.showInstantFeedback;
+		}
+		if (typeof fetched.meta.showSummary === 'boolean') {
+		  SHOW_RESULT_TABLE = fetched.meta.showSummary;
+		}
+		if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks)) {
+		  CORRECT_MARKS = fetched.meta.correctMarks;
+		}
+		if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) {
+		  INCORRECT_MARKS = fetched.meta.incorrectMarks;
+		}
+
+		$('markingSchemeBox').textContent =
+		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+		  
+		  
+          if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
+          if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+          $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
+
+          state.student = {
+            name: loginResult.name || name,
+            regNo,
+            phoneNo
+          };
+          state.questions = fetched.questions;
+          state.active = prepareQuestions(fetched.questions);
+          state.current = 0;
+          state.score = 0;
+          state.responses = [];
+          state.isSubmitting = false;
+          state.questionViolationHandled = false;
+
+          state.antiCheat.hiddenCount = 0;
+          state.antiCheat.blurCount = 0;
+          state.antiCheat.fullscreenExitCount = 0;
+          state.antiCheat.awayStart = null;
+          state.antiCheat.totalAwayMs = 0;
+          state.antiCheat.log = [];
+          state.antiCheat.started = true;
+          state.antiCheat.leftScreen = false;
+
+          showSection('quiz');
+          updateAntiCheatPanel();
+          await enterQuizFullscreen();
+          renderQuestion();
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert('Unable to start quiz.');
+      }
     };
 
-    $('submitAnswerBtn').onclick = () => recordAndContinue(state.selectedIndex);
-    $('skipBtn').onclick = () => recordAndContinue(-1);
+    $('submitAnswerBtn').onclick = () => {
+      if (state.selectedIndex === null) {
+        alert('Please select an answer first.');
+        return;
+      }
+      state.currentQuestionReason = 'answered';
+      recordAndContinue(state.selectedIndex, false);
+    };
 
-    function showSection(id) {
-      ['setup', 'quiz', 'result'].forEach(s => $(s).classList.add('hidden'));
-      $(id).classList.remove('hidden');
-    }
+    $('skipBtn').onclick = () => {
+      state.currentQuestionReason = 'skipped';
+      recordAndContinue(-1, false);
+    };
 
-    window.onload = () => { loadQuizMeta(); setupProctoring(); };
+    $('finishBtn').onclick = () => {
+	  const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
+	  
+	  if (confirmFinish) {
+		finishQuiz();
+	  }
+	};
+    $('restartBtn').onclick = () => location.reload();
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setupAntiCheatListeners();
+      loadQuizMetaOnly();
+    });
+
     document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('cut', e => e.preventDefault());
+    document.addEventListener('selectstart', e => {
+      if (e.target.closest('.nocopy')) e.preventDefault();
+    });
+
+    document.addEventListener('keydown', e => {
+      const blocked =
+        (e.ctrlKey || e.metaKey) &&
+        ['c', 'x', 'a', 'u', 's', 'p'].includes(e.key.toLowerCase());
+
+      if (blocked) {
+        e.preventDefault();
+      }
+    });
   </script>
 </body>
 </html>
