@@ -1,25 +1,73 @@
-<!-- ONLY showing SCRIPT PART (rest of your UI stays SAME) -->
-
 <script>
 const $ = (id) => document.getElementById(id);
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzD68o1oFDhEuCwbOksJCxIok-1CkUbFyfpPNYtmRQXletDuvbe2Oovo-nwIMQquhA/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyAcragw-0-dNOyfGqMJaxCGy2Q7OubLpMz_kEmWIZVxnrGOAIvUP08iux7AyMthI/exec";
 
 let CORRECT_MARKS = 1, INCORRECT_MARKS = 0;
 
 const state = {
-  sessionToken: null, student: null, active: [],
-  current: 0, timer: null, timeLeft: 0,
-  responses: [], selectedIndex: null,
+  sessionToken: null,
+  student: null,
+  active: [],
+  current: 0,
+  timer: null,
+  timeLeft: 0,
+  responses: [],
+  selectedIndex: null,
+  penalty: 0,
+  isTransitioning: false,
   antiCheat: { hiddenCount: 0, blurCount: 0, fsExit: 0 }
 };
 
-// =====================
-// 🔐 ANTI-CHEAT
-// =====================
+//////////////////////////////////////////////////
+// 🔐 PROCTORING (SMART LOGIC)
+//////////////////////////////////////////////////
+
+function showWarning(msg) {
+  const box = $('quizNotice');
+  box.textContent = msg;
+  box.style.background = "#fee2e2";
+  box.style.color = "#dc2626";
+
+  setTimeout(() => {
+    box.textContent = "Select an answer to proceed.";
+    box.style.background = "";
+    box.style.color = "";
+  }, 2000);
+}
+
+function safeSkipQuestion() {
+  if (state.isTransitioning) return;
+
+  state.isTransitioning = true;
+  clearInterval(state.timer);
+
+  setTimeout(() => {
+    recordAndNext(-1, true);
+    state.isTransitioning = false;
+  }, 300);
+}
+
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
+
     state.antiCheat.hiddenCount++;
-    alert("Warning: Tab switch detected!");
+    const c = state.antiCheat.hiddenCount;
+
+    if (c === 1) {
+      showWarning("⚠️ Warning 1/3: Stay on screen");
+      return;
+    }
+
+    if (c === 2) {
+      showWarning("❌ Warning 2/3: -1 mark penalty applied");
+      state.penalty++;
+      return;
+    }
+
+    if (c >= 3) {
+      showWarning("🚫 Warning 3+: Question skipped");
+      safeSkipQuestion();
+    }
   }
 });
 
@@ -30,18 +78,19 @@ window.addEventListener("blur", () => {
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement) {
     state.antiCheat.fsExit++;
-    alert("Fullscreen exited!");
+    showWarning("Fullscreen exited!");
   }
 });
 
-// Disable copy/paste/right click
+// Disable copy/paste
 document.addEventListener("copy", e => e.preventDefault());
 document.addEventListener("paste", e => e.preventDefault());
 document.addEventListener("contextmenu", e => e.preventDefault());
 
-// =====================
+//////////////////////////////////////////////////
 // API
-// =====================
+//////////////////////////////////////////////////
+
 async function postJSON(payload) {
   const res = await fetch(GOOGLE_SCRIPT_URL, {
     method: 'POST',
@@ -50,16 +99,16 @@ async function postJSON(payload) {
   return await res.json();
 }
 
-// =====================
+//////////////////////////////////////////////////
 // START QUIZ
-// =====================
+//////////////////////////////////////////////////
+
 $('startBtn').onclick = async () => {
 
   const reg = $('regNo').value.trim();
   const pass = $('studentPassword').value.trim();
   if (!reg || !pass) return alert("Fill required fields");
 
-  // 🔒 Force fullscreen
   await document.documentElement.requestFullscreen();
 
   const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
@@ -72,7 +121,7 @@ $('startBtn').onclick = async () => {
   state.sessionToken = login.sessionToken;
   state.student = { name: login.name, regNo: reg };
 
-  const qData = await postJSON({ action: 'getQuestions', sessionToken: state.sessionToken });
+  const qData = await postJSON({ action: 'getQuestions' });
 
   state.active = qData.questions.map(q => ({
     ...q,
@@ -83,10 +132,12 @@ $('startBtn').onclick = async () => {
   renderQuestion();
 };
 
-// =====================
-// QUESTION RENDER
-// =====================
+//////////////////////////////////////////////////
+// QUESTION
+//////////////////////////////////////////////////
+
 function renderQuestion() {
+
   const q = state.active[state.current];
   state.selectedIndex = null;
 
@@ -113,11 +164,13 @@ function renderQuestion() {
   startTimer();
 }
 
-// =====================
+//////////////////////////////////////////////////
 // TIMER
-// =====================
+//////////////////////////////////////////////////
+
 function startTimer() {
   clearInterval(state.timer);
+
   state.timer = setInterval(() => {
     state.timeLeft--;
     $('timerPillTop').textContent = state.timeLeft + " s";
@@ -128,10 +181,12 @@ function startTimer() {
   }, 1000);
 }
 
-// =====================
+//////////////////////////////////////////////////
 // RECORD
-// =====================
+//////////////////////////////////////////////////
+
 function recordAndNext(idx, timeout) {
+
   clearInterval(state.timer);
 
   state.responses.push({
@@ -142,22 +197,27 @@ function recordAndNext(idx, timeout) {
 
   state.current++;
 
-  if (state.current < state.active.length) renderQuestion();
-  else finishQuiz();
+  if (state.current < state.active.length) {
+    renderQuestion();
+  } else {
+    finishQuiz();
+  }
 }
 
-// =====================
+//////////////////////////////////////////////////
 // SUBMIT
-// =====================
+//////////////////////////////////////////////////
+
 $('submitAnswerBtn').onclick = () => {
   recordAndNext(state.selectedIndex, false);
 };
 
 $('skipBtn').onclick = () => recordAndNext(-1, false);
 
-// =====================
+//////////////////////////////////////////////////
 // FINISH
-// =====================
+//////////////////////////////////////////////////
+
 async function finishQuiz() {
 
   clearInterval(state.timer);
@@ -168,7 +228,8 @@ async function finishQuiz() {
     sessionToken: state.sessionToken,
     student: state.student,
     responses: state.responses,
-    antiCheat: state.antiCheat
+    antiCheat: state.antiCheat,
+    penalty: state.penalty
   });
 
   if (res.status === 'submitted') {
@@ -180,7 +241,10 @@ async function finishQuiz() {
   }
 }
 
-// =====================
+//////////////////////////////////////////////////
+// UI
+//////////////////////////////////////////////////
+
 function showSection(id) {
   ['setup','quiz','result'].forEach(s => $(s).classList.add('hidden'));
   $(id).classList.remove('hidden');
