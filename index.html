@@ -3,17 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Class Quiz | Pro Edition</title>
+  <title>Proctored Class Quiz</title>
   
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']]
-      }
-    };
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] } };
   </script>
 
 <style>
@@ -26,7 +21,7 @@
   }
   * { box-sizing: border-box; }
   body {
-    margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin:0; font-family: 'Segoe UI', sans-serif;
     color:var(--text); background: linear-gradient(135deg, var(--bg1), var(--bg2));
     min-height:100vh;
   }
@@ -43,7 +38,7 @@
     background:var(--inputbg); font-size:1rem;
   }
   
-  /* Global Button Style (Main Action Buttons) */
+  /* Action Buttons */
   button {
     padding:12px 24px; border-radius:12px; border:none; cursor:pointer;
     font-size:1rem; font-weight:700; background:var(--accent); color:#fff;
@@ -51,41 +46,23 @@
   button:disabled { opacity:0.5; cursor:not-allowed; }
   button.secondary { background:#e2e8f0; color:var(--text); }
 
-  /* Specific Quiz Option Buttons - Overriding Global Color */
+  /* Option Buttons - Color Fix Included */
   button.answer {
-    text-align: left;
-    padding: 16px;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: var(--soft);
-    cursor: pointer;
-    color: var(--text) !important; /* Force text to dark blue/black */
-    font-weight: 500;
-    min-height: 84px;
-    width: 100%;
-    transition: all 0.2s;
+    text-align: left; padding: 16px; border-radius: 16px;
+    border: 1px solid var(--border); background: var(--soft);
+    cursor: pointer; color: var(--text) !important;
+    font-weight: 500; min-height: 84px; width: 100%;
   }
-  
   button.answer.selected {
-    border-color: var(--accent);
-    background: #dbeafe;
-    color: var(--accent) !important;
+    border-color: var(--accent); background: #dbeafe; color: var(--accent) !important;
   }
   
-  button.answer:hover:not(:disabled) { background:#eff6ff; }
-
   .topbar { display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .pill { padding:8px 16px; border-radius:999px; background:var(--soft); border:1px solid var(--border); font-weight:700; }
-  .timer { font-size:1.2rem; }
-  .timer.low { color: var(--warn); }
-  .timer.zero { color: var(--danger); }
+  .timer { font-size:1.2rem; font-weight: 800; }
   .qtext { font-size:1.5rem; line-height:1.4; margin:20px 0; font-weight:800; }
   .answers { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .notice { margin-top:14px; padding:12px; border-radius:12px; background:var(--soft2); border:1px solid var(--border); color:var(--muted); }
-  table { width:100%; border-collapse:collapse; margin-top:20px; }
-  th, td { border-bottom:1px solid var(--border); padding:12px 8px; text-align:left; }
-  .result-correct td { background: #f0fdf4; }
-  .result-wrong td { background: #fef2f2; }
   .score { font-size:2.5rem; font-weight:800; color:var(--accent2); }
   .nocopy { user-select: none; -webkit-user-select: none; }
   @media (max-width: 760px) { .grid2, .answers { grid-template-columns:1fr; } }
@@ -96,17 +73,13 @@
   <div class="container">
     <section id="setup" class="card">
       <h1 id="quizTitle">Connecting...</h1>
-      <p class="muted" id="quizIntro">Initialising secure connection to server.</p>
-      <p id="quizDue"></p>
-      <div class="notice" id="markingSchemeBox">Waiting for marking scheme...</div>
-      
       <div class="grid2">
         <div><label>Roll No</label><input id="studentName" placeholder="e.g. 240XXXX" /></div>
         <div><label>ID Card No</label><input id="regNo" placeholder="User ID" /></div>
       </div>
       <div class="grid2" style="margin-top:12px;">
-        <div><label>Phone (Optional)</label><input id="phoneNo" /></div>
-        <div><label>Access Password</label><input id="studentPassword" type="password" /></div>
+        <div><label>Phone</label><input id="phoneNo" /></div>
+        <div><label>Password</label><input id="studentPassword" type="password" /></div>
       </div>
       <div style="margin-top:20px;"><button id="startBtn" disabled>Checking Status...</button></div>
     </section>
@@ -119,7 +92,7 @@
       </div>
       <div class="qtext nocopy" id="questionText"></div>
       <div class="answers" id="answersBox"></div>
-      <div class="notice" id="quizNotice">Select an answer to proceed.</div>
+      <div class="notice" id="quizNotice">Stay on screen. Moving away skips the question.</div>
       <div class="row" style="display:flex; gap:10px; margin-top:20px;">
         <button id="submitAnswerBtn" disabled>Submit Answer</button>
         <button id="skipBtn" class="secondary">Skip</button>
@@ -129,81 +102,57 @@
 
     <section id="result" class="card hidden">
       <h2>Quiz Result</h2>
-      <div class="score" id="scoreText">Calculating...</div>
-      <p class="muted" id="resultMeta"></p>
-      <div id="resultTableWrap" class="hidden">
-        <table>
-          <thead><tr><th>#</th><th>Question</th><th>Your Ans</th><th>Correct</th><th>Status</th></tr></thead>
-          <tbody id="resultTableBody"></tbody>
-        </table>
-      </div>
+      <div class="score" id="scoreText">Syncing...</div>
+      <p id="resultMeta"></p>
       <div style="margin-top:20px;"><button id="restartBtn" class="secondary">Restart</button></div>
     </section>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqudZ7AegDQV9Js2Wa3HXZRi4AAisjXnO_PYvuveaonbp84evQTItENObpOvYIciM/exec";
-
-    let SHOW_CORRECT_ANSWER = false, SHOW_RESULT_TABLE = true;
-    let CORRECT_MARKS = 1, INCORRECT_MARKS = 0;
+    const GOOGLE_SCRIPT_URL = "YOUR_DEPLOYED_URL_HERE";
 
     const state = {
-      sessionToken: null, student: null, questions: [], active: [], current: 0,
+      sessionToken: null, student: null, active: [], current: 0,
       timer: null, timeLeft: 0, responses: [], isSubmitting: false,
-      selectedIndex: null, questionStartTime: null,
-      antiCheat: { hiddenCount: 0, blurCount: 0, fsExit: 0, started: false }
+      selectedIndex: null,
+      antiCheat: { hiddenCount: 0, blurCount: 0, started: false, violationHandled: false }
     };
 
     async function postJSON(payload) {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       });
       return await res.json();
     }
 
-    async function sendResultToGoogleSheet(resultObj) {
-      let attempt = 0;
-      while (attempt < 3) {
-        try {
-          const res = await postJSON({ action: 'submitQuiz', ...resultObj });
-          if (res.status === 'submitted') return res;
-        } catch (e) {
-          attempt++;
-          await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
-        }
-      }
-      localStorage.setItem('backup_' + resultObj.student.regNo, JSON.stringify(resultObj));
-      return { status: 'offline' };
+    // Proctoring
+    function setupProctoring() {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && state.antiCheat.started && !state.isSubmitting) handleViolation("Tab Switched");
+      });
+      window.addEventListener('blur', () => {
+        if (state.antiCheat.started && !state.isSubmitting) handleViolation("Window Unfocused");
+      });
     }
 
-    async function loadQuizMetaOnly() {
-      try {
-        const data = await postJSON({ action: 'getQuizMeta' });
-        const m = data.meta;
-        $('quizTitle').textContent = m.quizName || "Class Quiz";
-        $('markingSchemeBox').textContent = `Marking: +${m.correctMarks} Correct | ${m.incorrectMarks} Incorrect`;
-        CORRECT_MARKS = m.correctMarks; INCORRECT_MARKS = m.incorrectMarks;
-        SHOW_CORRECT_ANSWER = m.showAnswers; SHOW_RESULT_TABLE = m.showSummary;
-        $('startBtn').disabled = false;
-        $('startBtn').textContent = "Start Quiz";
-      } catch (e) {
-        $('quizTitle').textContent = "Connection Error";
-      }
+    function handleViolation(reason) {
+      if (state.antiCheat.violationHandled || state.isSubmitting) return;
+      state.antiCheat.violationHandled = true;
+      alert("PROCTORING ALERT: " + reason + ". Question forfeited.");
+      recordAndContinue(-1, false); 
     }
 
     function renderQuestion() {
+      state.antiCheat.violationHandled = false;
       const q = state.active[state.current];
       state.selectedIndex = null;
-      state.questionStartTime = Date.now();
       
       $('progressPill').textContent = `Q ${state.current + 1} / ${state.active.length}`;
       $('questionText').textContent = q.question;
       $('answersBox').innerHTML = '';
       $('submitAnswerBtn').disabled = true;
-      $('submitAnswerBtn').textContent = "Submit Answer";
 
       q.answers.forEach((ans, idx) => {
         const b = document.createElement('button');
@@ -218,11 +167,7 @@
         $('answersBox').appendChild(b);
       });
 
-      // TRIGGER LATEX RENDERING
-      if (window.MathJax && window.MathJax.typesetPromise) {
-        MathJax.typesetPromise();
-      }
-
+      if (window.MathJax) MathJax.typesetPromise();
       state.timeLeft = q.time;
       startTimer();
     }
@@ -239,11 +184,7 @@
     function recordAndContinue(idx, timedOut) {
       clearInterval(state.timer);
       const q = state.active[state.current];
-      state.responses.push({
-        questionId: q.questionId,
-        selectedIndex: idx >= 0 ? q.optionMap[idx] : -1,
-        timedOut: timedOut
-      });
+      state.responses.push({ questionId: q.questionId, selectedIndex: idx, timedOut });
       state.current++;
       if (state.current < state.active.length) renderQuestion();
       else finishQuiz();
@@ -252,90 +193,47 @@
     async function finishQuiz() {
       if (state.isSubmitting) return;
       state.isSubmitting = true;
-      clearInterval(state.timer);
+      state.antiCheat.started = false;
       showSection('result');
-      $('scoreText').textContent = "Syncing...";
-      const payload = {
-        sessionToken: state.sessionToken,
-        student: state.student,
-        responses: state.responses,
-        antiCheat: state.antiCheat
-      };
-      const res = await sendResultToGoogleSheet(payload);
-      if (res.status === 'submitted') renderFinalUI(res.result);
-      else {
-        $('scoreText').textContent = "Offline Safe";
-        $('resultMeta').textContent = "Submission failed. Data is saved locally.";
-      }
-    }
-
-    function renderFinalUI(res) {
-      $('scoreText').textContent = `${res.score} / ${res.maxMarks}`;
-      $('resultMeta').innerHTML = `Correct: ${res.correctCount} | Incorrect: ${res.incorrectCount} | Accuracy: ${res.percentage}%`;
-      if (SHOW_RESULT_TABLE) {
-        $('resultTableWrap').classList.remove('hidden');
-        const body = $('resultTableBody');
-        body.innerHTML = '';
-        res.review.forEach((r, i) => {
-          const row = document.createElement('tr');
-          row.className = r.isCorrect ? 'result-correct' : (r.isCorrect === false ? 'result-wrong' : '');
-          row.innerHTML = `<td>${i+1}</td><td>${r.question}</td><td>${r.yourAnswer}</td><td>${SHOW_CORRECT_ANSWER ? r.correctAnswer : '---'}</td><td>${r.isCorrect ? '✅' : '❌'}</td>`;
-          body.appendChild(row);
-        });
-        if (window.MathJax && window.MathJax.typesetPromise) MathJax.typesetPromise();
+      
+      const res = await postJSON({ action: 'submitQuiz', sessionToken: state.sessionToken, student: state.student, responses: state.responses, antiCheat: state.antiCheat });
+      if (res.status === 'submitted') {
+        $('scoreText').textContent = `${res.result.score} / ${res.result.maxMarks}`;
+        $('resultMeta').textContent = `Correct: ${res.result.correctCount}`;
       }
     }
 
     $('startBtn').onclick = async () => {
       const btn = $('startBtn');
-      const reg = $('regNo').value.trim();
-      const pass = $('studentPassword').value.trim();
-      if (!reg || !pass) return alert("Required fields missing");
-
-      btn.disabled = true;
-      btn.textContent = "Verifying Login...";
-
+      btn.disabled = true; btn.textContent = "Verifying...";
       try {
-        const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
-        if (login.status !== 'ok') {
-          alert("Login Failed: " + login.status);
-          btn.disabled = false;
-          btn.textContent = "Start Quiz";
-          return;
-        }
-        btn.textContent = "Fetching Questions...";
+        const login = await postJSON({ action: 'validateLogin', regNo: $('regNo').value, password: $('studentPassword').value });
+        if (login.status !== 'ok') { alert(login.status); btn.disabled = false; return; }
+        
         state.sessionToken = login.sessionToken;
-        state.student = { name: login.name, regNo: reg };
+        state.student = { name: login.name, regNo: $('regNo').value };
         const qData = await postJSON({ action: 'getQuestions', sessionToken: state.sessionToken });
-        state.active = qData.questions.map(q => ({
-            ...q,
-            answers: [q.options.A, q.options.B, q.options.C, q.options.D],
-            optionMap: [0,1,2,3] 
-        }));
+        state.active = qData.questions.map(q => ({ ...q, answers: [q.options.A, q.options.B, q.options.C, q.options.D] }));
+        
+        state.antiCheat.started = true;
+        setupProctoring();
         showSection('quiz');
         renderQuestion();
-      } catch (e) {
-        btn.disabled = false;
-        btn.textContent = "Start Quiz";
-        alert("Network Error");
-      }
+      } catch (e) { btn.disabled = false; alert("Connection Error"); }
     };
 
-    $('submitAnswerBtn').onclick = () => {
-      $('submitAnswerBtn').disabled = true;
-      $('submitAnswerBtn').textContent = "Saving...";
-      recordAndContinue(state.selectedIndex, false);
-    };
-
+    $('submitAnswerBtn').onclick = () => recordAndContinue(state.selectedIndex, false);
     $('skipBtn').onclick = () => recordAndContinue(-1, false);
-    $('finishBtn').onclick = () => confirm("Finish now?") && finishQuiz();
     $('restartBtn').onclick = () => location.reload();
-
     function showSection(id) {
       ['setup', 'quiz', 'result'].forEach(s => $(s).classList.add('hidden'));
       $(id).classList.remove('hidden');
     }
-    document.addEventListener("DOMContentLoaded", loadQuizMetaOnly);
+    document.addEventListener("DOMContentLoaded", async () => {
+      const data = await postJSON({ action: 'getQuizMeta' });
+      $('quizTitle').textContent = data.meta.quizName;
+      $('startBtn').disabled = false; $('startBtn').textContent = "Start Quiz";
+    });
   </script>
 </body>
 </html>
