@@ -1,8 +1,8 @@
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+
 const $ = (id) => document.getElementById(id);
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyAcragw-0-dNOyfGqMJaxCGy2Q7OubLpMz_kEmWIZVxnrGOAIvUP08iux7AyMthI/exec";
-
-let CORRECT_MARKS = 1, INCORRECT_MARKS = 0;
 
 const state = {
   sessionToken: null,
@@ -20,11 +20,13 @@ const state = {
 };
 
 //////////////////////////////////////////////////
-// 🔐 PROCTORING (SMART LOGIC)
+// SAFE WARNING UI
 //////////////////////////////////////////////////
 
 function showWarning(msg) {
   const box = $('quizNotice');
+  if (!box) return;
+
   box.textContent = msg;
   box.style.background = "#fee2e2";
   box.style.color = "#dc2626";
@@ -35,6 +37,10 @@ function showWarning(msg) {
     box.style.color = "";
   }, 2000);
 }
+
+//////////////////////////////////////////////////
+// SAFE SKIP
+//////////////////////////////////////////////////
 
 function safeSkipQuestion() {
   if (state.isTransitioning) return;
@@ -48,9 +54,13 @@ function safeSkipQuestion() {
   }, 300);
 }
 
+//////////////////////////////////////////////////
+// PROCTORING
+//////////////////////////////////////////////////
+
 document.addEventListener("visibilitychange", () => {
 
-  if (!state.quizStarted) return;   // ✅ CRITICAL FIX
+  if (!state.quizStarted) return;
 
   if (document.hidden) {
 
@@ -58,29 +68,23 @@ document.addEventListener("visibilitychange", () => {
     const c = state.antiCheat.hiddenCount;
 
     if (c === 1) {
-      showWarning("⚠️ Warning 1/3: Stay on screen");
-      return;
-    }
-
-    if (c === 2) {
-      showWarning("❌ Warning 2/3: -1 mark penalty applied");
+      showWarning("⚠️ Warning 1/3");
+    } else if (c === 2) {
+      showWarning("❌ Warning 2/3 (-1 mark)");
       state.penalty++;
-      return;
-    }
-
-    if (c >= 3) {
-      showWarning("🚫 Warning 3+: Question skipped");
+    } else {
+      showWarning("🚫 Question skipped");
       safeSkipQuestion();
     }
   }
 });
 
 window.addEventListener("blur", () => {
-  state.antiCheat.blurCount++;
+  if (state.quizStarted) state.antiCheat.blurCount++;
 });
 
 document.addEventListener("fullscreenchange", () => {
-  if (!document.fullscreenElement) {
+  if (state.quizStarted && !document.fullscreenElement) {
     state.antiCheat.fsExit++;
     showWarning("Fullscreen exited!");
   }
@@ -96,60 +100,87 @@ document.addEventListener("contextmenu", e => e.preventDefault());
 //////////////////////////////////////////////////
 
 async function postJSON(payload) {
-  const res = await fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-  return await res.json();
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("API error", e);
+    return {};
+  }
 }
 
 //////////////////////////////////////////////////
 // START QUIZ
 //////////////////////////////////////////////////
 
-$('startBtn').onclick = async () => {
+const startBtn = $('startBtn');
+if (startBtn) {
+startBtn.onclick = async () => {
 
   const reg = $('regNo').value.trim();
   const pass = $('studentPassword').value.trim();
-  if (!reg || !pass) return alert("Fill required fields");
+
+  if (!reg || !pass) {
+    alert("Fill required fields");
+    return;
+  }
 
   await document.documentElement.requestFullscreen();
 
-  const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
+  const login = await postJSON({
+    action: 'validateLogin',
+    regNo: reg,
+    password: pass
+  });
 
   if (login.status !== 'ok') {
     alert("Login failed");
     return;
   }
-  state.quizStarted = true;   // ✅ IMPORTANT
+
   state.sessionToken = login.sessionToken;
   state.student = { name: login.name, regNo: reg };
 
-const qData = await postJSON({
-  action: 'getQuestions',
-  sessionToken: state.sessionToken   // ✅ REQUIRED
-});
+  // ✅ FETCH QUESTIONS
+  const qData = await postJSON({
+    action: 'getQuestions',
+    sessionToken: state.sessionToken
+  });
+
+  if (!qData.questions || qData.questions.length === 0) {
+    alert("No questions received from server");
+    return;
+  }
+
   state.active = qData.questions.map(q => ({
     ...q,
     answers: [q.options.A, q.options.B, q.options.C, q.options.D]
   }));
 
+  state.quizStarted = true;
+
   showSection('quiz');
   renderQuestion();
 };
+}
 
 //////////////////////////////////////////////////
-// QUESTION
+// RENDER QUESTION
 //////////////////////////////////////////////////
 
 function renderQuestion() {
 
+  if (!state.active || state.active.length === 0) {
+    $('quizNotice').textContent = "No questions loaded!";
+    return;
+  }
+
   const q = state.active[state.current];
   state.selectedIndex = null;
-	if (!state.active.length) {
-	  $('quizNotice').textContent = "No questions loaded!";
-	  return;
-	}
+
   $('questionText').textContent = q.question;
   $('answersBox').innerHTML = '';
   $('submitAnswerBtn').disabled = true;
@@ -214,7 +245,7 @@ function recordAndNext(idx, timeout) {
 }
 
 //////////////////////////////////////////////////
-// SUBMIT
+// BUTTONS
 //////////////////////////////////////////////////
 
 $('submitAnswerBtn').onclick = () => {
@@ -246,7 +277,7 @@ async function finishQuiz() {
     $('resultMeta').textContent =
       `Correct: ${res.result.correctCount}, Incorrect: ${res.result.incorrectCount}`;
   } else {
-    $('scoreText').textContent = "Error";
+    $('scoreText').textContent = "Submission Error";
   }
 }
 
@@ -258,4 +289,6 @@ function showSection(id) {
   ['setup','quiz','result'].forEach(s => $(s).classList.add('hidden'));
   $(id).classList.remove('hidden');
 }
+
+});
 </script>
