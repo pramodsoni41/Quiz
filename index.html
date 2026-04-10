@@ -159,6 +159,7 @@
         $('startBtn').textContent = "Start Quiz";
       } catch (e) {
         $('quizTitle').textContent = "Connection Error";
+        $('quizIntro').textContent = "Please check your internet and refresh the page.";
       }
     }
 
@@ -171,6 +172,7 @@
       $('questionText').textContent = q.question;
       $('answersBox').innerHTML = '';
       $('submitAnswerBtn').disabled = true;
+      $('submitAnswerBtn').textContent = "Submit Answer"; // Reset text
 
       q.answers.forEach((ans, idx) => {
         const b = document.createElement('button');
@@ -254,16 +256,30 @@
       }
     }
 
-    // --- EVENTS ---
+    // --- UPDATED START EVENT ---
     $('startBtn').onclick = async () => {
+      const btn = $('startBtn');
       const reg = $('regNo').value.trim();
       const pass = $('studentPassword').value.trim();
-      if (!reg || !pass) return alert("Fields required");
+      
+      if (!reg || !pass) return alert("Roll No and Password are required");
+
+      // 1. Lock the UI to prevent multiple requests
+      btn.disabled = true;
+      btn.textContent = "Verifying Login...";
 
       try {
         const login = await postJSON({ action: 'validateLogin', regNo: reg, password: pass });
-        if (login.status !== 'ok') return alert(login.status);
         
+        if (login.status !== 'ok') {
+          // Re-enable if login fails
+          alert("Login Failed: " + login.status);
+          btn.disabled = false;
+          btn.textContent = "Start Quiz";
+          return;
+        }
+        
+        btn.textContent = "Fetching Questions...";
         state.sessionToken = login.sessionToken;
         state.student = { name: login.name, regNo: reg };
         
@@ -271,17 +287,28 @@
         state.active = qData.questions.map(q => ({
             ...q,
             answers: [q.options.A, q.options.B, q.options.C, q.options.D],
-            optionMap: [0,1,2,3] // Simple map for this version
+            optionMap: [0,1,2,3] 
         }));
 
         showSection('quiz');
         renderQuestion();
-      } catch (e) { alert("Login Error"); }
+      } catch (e) { 
+        // Re-enable on network error
+        alert("Connection Error. Please try again.");
+        btn.disabled = false;
+        btn.textContent = "Start Quiz";
+      }
     };
 
-    $('submitAnswerBtn').onclick = () => recordAndContinue(state.selectedIndex, false);
+    $('submitAnswerBtn').onclick = () => {
+      // Small feedback on submission
+      $('submitAnswerBtn').disabled = true;
+      $('submitAnswerBtn').textContent = "Saving...";
+      recordAndContinue(state.selectedIndex, false);
+    };
+
     $('skipBtn').onclick = () => recordAndContinue(-1, false);
-    $('finishBtn').onclick = () => confirm("Finish now?") && finishQuiz();
+    $('finishBtn').onclick = () => confirm("Finish now? You cannot change your answers after this.") && finishQuiz();
     $('restartBtn').onclick = () => location.reload();
 
     function showSection(id) {
