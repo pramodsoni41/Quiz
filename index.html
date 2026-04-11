@@ -1286,25 +1286,29 @@ if (state.isSubmitting || submissionLock) return;
     $('retryBtn').disabled = false;   // ✅ ADD THIS
   }
 };
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+
+  setupAntiCheatListeners();
+
+  // ✅ First load meta (enables button, inputs)
+  await loadQuizMetaOnly();
+
   const savedSession = localStorage.getItem("quiz_session");
   const savedProgress = localStorage.getItem("quiz_progress");
 
-if (savedSession && savedProgress) {
+  if (savedSession && savedProgress) {
 
-  // ✅ CRITICAL LINE (missing)
-  state.sessionToken = savedSession;
+    state.sessionToken = savedSession;
 
-  $('setup').classList.add('hidden');
+    $('setup').classList.add('hidden');
 
-  $('loadingOverlay').classList.remove('hidden');
-  $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
+    $('loadingOverlay').classList.remove('hidden');
+    $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
 
-  $('startBtn').click();
-}
+    $('startBtn').click();
+  }
 
-  setupAntiCheatListeners();
-  loadQuizMetaOnly();
+
 });
 
     document.addEventListener('contextmenu', e => e.preventDefault());
