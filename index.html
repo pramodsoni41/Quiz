@@ -1065,6 +1065,7 @@ $('loadingOverlay').querySelector('.loadingText').textContent = "Submitting...";
       clearInterval(state.timer);
       state.antiCheat.started = false;
       stopAwayTimer();
+state.responses = state.responses.slice(0, state.active.length);
 
       const resultObj = {
         sessionToken: state.sessionToken,
@@ -1228,6 +1229,7 @@ if (!state.sessionToken || (regNo && password)) {
 if (!localStorage.getItem("quiz_progress")) {
   state.current = 0;
   state.responses = [];
+  
   // ❌ do NOT touch state.active here
 }
 
