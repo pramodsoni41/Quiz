@@ -1117,12 +1117,12 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-      if (!name || !regNo || !password) {
-        alert('Please enter name, registration number, and password.');
-		  $('loadingOverlay').classList.add('hidden');  // ✅ ADD
-  $('startBtn').disabled = false;               // ✅ ADD
-        return;
-      }
+if (!state.sessionToken && (!name || !regNo || !password)) {
+  alert('Please enter name, registration number, and password.');
+  $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
+  return;
+}
 
       try {
         const loginResult = await validateStudentLogin(regNo, password);
@@ -1286,16 +1286,26 @@ if (state.isSubmitting || submissionLock) return;
     $('retryBtn').disabled = false;   // ✅ ADD THIS
   }
 };
-    document.addEventListener("DOMContentLoaded", () => {
-	const savedSession = localStorage.getItem("quiz_session");
-const savedProgress = localStorage.getItem("quiz_progress");
+document.addEventListener("DOMContentLoaded", () => {
+  const savedSession = localStorage.getItem("quiz_session");
+  const savedProgress = localStorage.getItem("quiz_progress");
 
 if (savedSession && savedProgress) {
-  $('startBtn').click();   // auto resume
+
+  // ✅ CRITICAL LINE (missing)
+  state.sessionToken = savedSession;
+
+  $('setup').classList.add('hidden');
+
+  $('loadingOverlay').classList.remove('hidden');
+  $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
+
+  $('startBtn').click();
 }
-      setupAntiCheatListeners();
-      loadQuizMetaOnly();
-    });
+
+  setupAntiCheatListeners();
+  loadQuizMetaOnly();
+});
 
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('copy', e => e.preventDefault());
