@@ -990,7 +990,28 @@ async function sendResultToGoogleSheet(resultObj) {
     }
 
     async function finishQuiz() {
-	
+	if (!state.student) {
+  const savedStudent = localStorage.getItem("quiz_student");
+  if (savedStudent) {
+    state.student = JSON.parse(savedStudent);
+  }
+}
+const savedProgress = localStorage.getItem("quiz_progress");
+
+if ((!state.responses || state.responses.length === 0) && savedProgress) {
+  try {
+    const data = JSON.parse(savedProgress);
+
+    if (data.responses && data.responses.length > 0) {
+      state.responses = data.responses;
+    }
+
+    if (!state.sessionToken && data.sessionToken) {
+      state.sessionToken = data.sessionToken;
+    }
+
+  } catch (e) {}
+}
       if (state.isSubmitting || submissionLock) return;
 
   submissionLock = true;   // 🔒 HARD LOCK
@@ -1159,9 +1180,11 @@ if (!state.sessionToken || (regNo && password)) {
 }
 		  localStorage.setItem("quiz_session", state.sessionToken);
 		  // reset
-state.current = 0;
-state.responses = [];
-state.active = null;
+if (!localStorage.getItem("quiz_progress")) {
+  state.current = 0;
+  state.responses = [];
+  state.active = null;
+}
 
 
 const saved = localStorage.getItem("quiz_progress");
@@ -1171,9 +1194,9 @@ if (saved) {
 
 if (data.sessionToken === state.sessionToken) {
   state.responses = data.responses || [];
-  state.current = data.current || 0;
+  
   state.active = data.active || null;
-
+state.current = state.responses.length;
   if (state.current > 0 && state.active && state.active.length) {
   showToast(`Resuming from Question ${Math.min(state.current + 1, state.active.length)}`);
 }
@@ -1214,6 +1237,7 @@ if (data.sessionToken === state.sessionToken) {
             regNo,
             phoneNo
           };
+		  localStorage.setItem("quiz_student", JSON.stringify(state.student));
 state.questions = fetched.questions;
 
 if (!state.active || state.active.length === 0) {
@@ -1294,18 +1318,40 @@ if (state.isSubmitting || submissionLock) return;
     $('retryBtn').disabled = false;   // ✅ ADD THIS
   }
 };
+
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   setupAntiCheatListeners();
 
-  // ✅ First load meta (enables button, inputs)
   await loadQuizMetaOnly();
 
+  const savedStudent = localStorage.getItem("quiz_student");
   const savedSession = localStorage.getItem("quiz_session");
   const savedProgress = localStorage.getItem("quiz_progress");
 
-  if (savedSession && savedProgress) {
+  // ✅ FIRST restore student
+  if (savedStudent) {
+    state.student = JSON.parse(savedStudent);
 
+    $('studentName').value = state.student.name || '';
+    $('regNo').value = state.student.regNo || '';
+    $('phoneNo').value = state.student.phoneNo || '';
+  }
+
+  // ❗ THEN check finished quiz
+  if (savedProgress) {
+    const data = JSON.parse(savedProgress);
+
+    if (data.current >= (data.active?.length || 0)) {
+      state.sessionToken = savedSession;   // ✅ ADD THIS
+      finishQuiz();
+      return;
+    }
+  }
+
+  // ✅ normal resume
+  if (savedSession && savedProgress) {
     state.sessionToken = savedSession;
 
     $('setup').classList.add('hidden');
@@ -1315,7 +1361,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     $('startBtn').click();
   }
-
 
 });
 
