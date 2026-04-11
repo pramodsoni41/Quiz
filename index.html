@@ -1265,12 +1265,10 @@ if (saved) {
       state.responses = data.responses || [];
       state.active = Array.isArray(data.active) ? data.active : [];
 
-const resumeIndex = Math.min(
-  Number.isInteger(data.current) ? data.current : 0,
-  (state.active?.length || 0)
-);
+const resumeIndex = Number.isInteger(data.current) ? data.current : 0;
 
-state.current = Math.min(resumeIndex, state.active.length);
+// ✅ ALWAYS move forward on refresh
+state.current = Math.min(resumeIndex + 1, state.active.length);
       if (state.current < state.active.length) {
         showToast(`Resuming from Question ${state.current + 1}`);
       }
