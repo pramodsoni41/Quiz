@@ -843,7 +843,7 @@ function paintTimer() {
       if (selectedIndex >= 0 && q.optionMap && q.optionMap[selectedIndex] != null) {
         originalSelectedIndex = q.optionMap[selectedIndex];
       }
-
+state.responses = state.responses.filter(r => r.questionId !== q.questionId);
 state.responses.push({
   questionId: q.questionId,
   questionNo: state.current + 1,
@@ -1228,7 +1228,7 @@ if (!state.sessionToken || (regNo && password)) {
 if (!localStorage.getItem("quiz_progress")) {
   state.current = 0;
   state.responses = [];
-  state.active = null;
+  // ❌ do NOT touch state.active here
 }
 
 let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
@@ -1240,10 +1240,12 @@ if (refreshCount > 5) {
   state.sessionToken = localStorage.getItem("quiz_session");
 
   const saved = localStorage.getItem("quiz_progress");
-  if (saved) {
+ 
+
+ if (saved) {
     const data = JSON.parse(saved);
     state.responses = data.responses || [];
-    state.active = data.active || [];
+    state.active = Array.isArray(data.active) ? data.active : [];
   }
 
   finishQuiz();
@@ -1251,64 +1253,40 @@ if (refreshCount > 5) {
 }
 const saved = localStorage.getItem("quiz_progress");
 
+
 if (saved) {
-  const data = JSON.parse(saved);
+  try {
+    const data = JSON.parse(saved);
 
-if (data.sessionToken === state.sessionToken) {
-  state.responses = data.responses || [];
-  state.active = data.active || null;
+    if (data.sessionToken === state.sessionToken) {
 
-  let resumeIndex = Number.isInteger(data.current) ? data.current : state.responses.length;
+      state.responses = data.responses || [];
+      state.active = Array.isArray(data.active) ? data.active : [];
 
-  // If refresh happened while a question was open, treat that visible question as skipped
-  if (state.active && state.active[resumeIndex]) {
-    const skippedQ = state.active[resumeIndex];
+const resumeIndex = Math.min(
+  Number.isInteger(data.current) ? data.current : 0,
+  (state.active?.length || 0)
+);
 
-    const alreadyRecorded = state.responses.some(r => r.questionId === skippedQ.questionId);
+state.current = resumeIndex;
 
-    if (!alreadyRecorded) {
-      state.responses.push({
-        questionId: skippedQ.questionId,
-        questionNo: resumeIndex + 1,
-        question: skippedQ.question,
-        selectedIndex: -1,
-        selectedAnswer: 'No answer',
-        timedOut: false,
-        reason: 'refresh_skipped',
-        timeSpentSeconds: null
-      });
+      if (state.current < state.active.length) {
+        showToast(`Resuming from Question ${state.current + 1}`);
+      }
 
-      localStorage.setItem("quiz_progress", JSON.stringify({
-        sessionToken: state.sessionToken,
-        responses: state.responses,
-        current: resumeIndex + 1,
-        active: state.active
-      }));
+    } else {
+      localStorage.removeItem("quiz_progress");
     }
 
-    state.current = Math.min(resumeIndex + 1, state.active.length);
-  } else {
-    state.current = resumeIndex;
-  }
-
-  if (state.current < state.active.length) {
-    showToast(`Resuming from Question ${state.current + 1}`);
+  } catch (e) {
+    localStorage.removeItem("quiz_progress");
   }
 }
-
- else {
-  localStorage.removeItem("quiz_progress");   // ✅ ADD THIS
-}
-  
-}
-          const fetched = await fetchQuestions();
-		  if (!state.active || state.active.length === 0) {
+const fetched = await fetchQuestions();
+if (!state.active || state.active.length === 0) {
   state.questions = fetched.questions;
   state.active = prepareQuestions(fetched.questions);
-} else {
-  state.questions = fetched.questions; // keep reference only
 }
-
 
 		if (typeof fetched.meta.showAnswers === 'boolean') {
 		  SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
@@ -1461,7 +1439,7 @@ if (backup && savedSession) {
   if (savedProgress) {
     const data = JSON.parse(savedProgress);
 
-    if (data.current >= (data.active?.length || 0)) {
+    if (Array.isArray(data.active) && data.current >= data.active.length) {
       state.sessionToken = savedSession;   // ✅ ADD THIS
       finishQuiz();
       return;
