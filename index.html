@@ -1207,7 +1207,7 @@ if (!localStorage.getItem("quiz_progress")) {
 let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
 refreshCount += 1;
 localStorage.setItem("quiz_refresh_count", refreshCount);
-if (refreshCount > 3) {
+if (refreshCount > 5) {
   alert("Maximum refresh attempts exceeded. Submitting quiz.");
 
   state.sessionToken = localStorage.getItem("quiz_session");
@@ -1473,3 +1473,4 @@ if (backup && savedSession) {
     });
   </script>
 </body>
+</html>
