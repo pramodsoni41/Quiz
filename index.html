@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <title>Class Quiz</title>
 <style>
   :root {
@@ -920,7 +921,9 @@ function showToast(msg) {
 
       $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
       $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
-      $('questionText').textContent = q.question;
+      $('questionText').innerHTML = q.question;
+		MathJax.typesetPromise();
+	  
       $('answersBox').innerHTML = '';
       $('quizNotice').textContent = 'Select one answer and click Submit Answer.';
       $('finishBtn').disabled = false;
@@ -931,8 +934,8 @@ function showToast(msg) {
         const btn = document.createElement('button');
         btn.className = 'answer nocopy';
         btn.type = 'button';
-        btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${ans}`;
-
+btn.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${ans}`;
+MathJax.typesetPromise();
         btn.onclick = () => {
           state.selectedIndex = idx;
           document.querySelectorAll('.answer').forEach(b => b.classList.remove('selected'));
