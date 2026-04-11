@@ -609,7 +609,7 @@ function ensureAntiCheatPanel() {
         type,
         time: new Date().toISOString(),
         questionNo: state.current + 1,
-        questionId: state.active[state.current]?.questionId || null
+        questionId: state.active?.[state.current]?.questionId || null
       });
 
       updateAntiCheatPanel();
@@ -1031,7 +1031,6 @@ console.log("serverResult =", serverResult);
       const totalQuestions = Number(serverResult.totalQuestions || 0);
 		const maxMarks = serverResult.maxMarks || '0.00';
 $('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
-		$('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
         <strong>Total Incorrect answers:</strong> ${serverResult.incorrectCount || 0}<br>
@@ -1130,7 +1129,7 @@ rows.forEach((review, i) => {
 		  // reset
 state.current = 0;
 state.responses = [];
-
+state.active = null;
 
 
 const saved = localStorage.getItem("quiz_progress");
