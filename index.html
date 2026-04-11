@@ -638,15 +638,15 @@ function ensureAntiCheatPanel() {
 }
     }
 
-    async function enterQuizFullscreen() {
-      try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        }
-      } catch (err) {
-        console.log('Fullscreen request failed:', err);
-      }
+async function enterQuizFullscreen(isUserGesture = false) {
+  try {
+    if (!document.fullscreenElement && isUserGesture) {
+      await document.documentElement.requestFullscreen();
     }
+  } catch (err) {
+    console.log('Fullscreen request failed:', err);
+  }
+}
 
     function getAntiCheatReport() {
       const ac = state.antiCheat;
