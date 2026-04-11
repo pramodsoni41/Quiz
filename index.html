@@ -979,19 +979,23 @@ if (window.MathJax) {
     }
 
 async function sendResultToGoogleSheet(resultObj) {
-  for (let i = 0; i < 10; i++) {
-    try {
-      const res = await postJSON({
+
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), 20000) // 20 sec max
+  );
+
+  try {
+    const res = await Promise.race([
+      postJSON({
         action: 'submitQuiz',
         ...resultObj
-      });
+      }),
+      timeout
+    ]);
 
-      if (res.status === 'submitted') return res;
+    if (res.status === 'submitted') return res;
 
-    } catch (err) {}
-
-    await new Promise(r => setTimeout(r, 2000 * (i + 1)));
-  }
+  } catch (err) {}
 
   return { status: 'failed' };
 }
@@ -1057,6 +1061,8 @@ $('loadingOverlay').querySelector('.loadingText').textContent = "Submitting...";
       if (panel) panel.style.display = 'none';
 
 if (submitResult.status !== 'submitted') {
+  $('loadingOverlay').classList.add('hidden');   // ✅ ADD THIS
+
 submissionLock = false;   // allow retry only
 state.isSubmitting = false;
 $('retryBtn').classList.remove('hidden');   // ✅ SHOW button
