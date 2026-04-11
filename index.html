@@ -1329,7 +1329,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const savedStudent = localStorage.getItem("quiz_student");
   const savedSession = localStorage.getItem("quiz_session");
   const savedProgress = localStorage.getItem("quiz_progress");
+const backup = localStorage.getItem("quiz_backup");
 
+// 🔥 AUTO-RESUBMIT if backup exists
+if (backup && savedSession) {
+  state.sessionToken = savedSession;
+
+  const resultObj = JSON.parse(backup);
+
+  // restore student if needed
+  if (!state.student && resultObj.student) {
+    state.student = resultObj.student;
+  }
+
+  // restore responses if needed
+  if ((!state.responses || state.responses.length === 0) && resultObj.responses) {
+    state.responses = resultObj.responses;
+  }
+
+  finishQuiz();
+  return;
+}
   // ✅ FIRST restore student
   if (savedStudent) {
     state.student = JSON.parse(savedStudent);
