@@ -953,14 +953,10 @@ q.answers.forEach((ans, idx) => {
   $('answersBox').appendChild(btn);
 });
 
-// 🔥 SINGLE MathJax call AFTER full DOM ready
 if (window.MathJax) {
-  MathJax.typesetClear();
-  if (window.MathJax) {
   MathJax.typesetClear();
   MathJax.typesetPromise([$('questionText'), $('answersBox')])
     .catch(err => console.log("MathJax error:", err));
-}
 }
 
       state.timeLeft = q.time;
@@ -2432,14 +2428,10 @@ q.answers.forEach((ans, idx) => {
   $('answersBox').appendChild(btn);
 });
 
-// 🔥 SINGLE MathJax call AFTER full DOM ready
 if (window.MathJax) {
-  MathJax.typesetClear();
-  if (window.MathJax) {
   MathJax.typesetClear();
   MathJax.typesetPromise([$('questionText'), $('answersBox')])
     .catch(err => console.log("MathJax error:", err));
-}
 }
 
       state.timeLeft = q.time;
