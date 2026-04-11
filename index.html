@@ -1195,14 +1195,47 @@ if (saved) {
 
 if (data.sessionToken === state.sessionToken) {
   state.responses = data.responses || [];
-  
   state.active = data.active || null;
-state.current = data.current ?? state.responses.length;
-  if (state.current > 0 && state.active && state.active.length) {
-  showToast(`Resuming from Question ${Math.min(state.current + 1, state.active.length)}`);
+
+  let resumeIndex = Number.isInteger(data.current) ? data.current : state.responses.length;
+
+  // If refresh happened while a question was open, treat that visible question as skipped
+  if (state.active && state.active[resumeIndex]) {
+    const skippedQ = state.active[resumeIndex];
+
+    const alreadyRecorded = state.responses.some(r => r.questionId === skippedQ.questionId);
+
+    if (!alreadyRecorded) {
+      state.responses.push({
+        questionId: skippedQ.questionId,
+        questionNo: resumeIndex + 1,
+        question: skippedQ.question,
+        selectedIndex: -1,
+        selectedAnswer: 'No answer',
+        timedOut: false,
+        reason: 'refresh_skipped',
+        timeSpentSeconds: null
+      });
+
+      localStorage.setItem("quiz_progress", JSON.stringify({
+        sessionToken: state.sessionToken,
+        responses: state.responses,
+        current: resumeIndex + 1,
+        active: state.active
+      }));
+    }
+
+    state.current = Math.min(resumeIndex + 1, state.active.length);
+  } else {
+    state.current = resumeIndex;
+  }
+
+  if (state.current < state.active.length) {
+    showToast(`Resuming from Question ${state.current + 1}`);
+  }
 }
 
-} else {
+ else {
   localStorage.removeItem("quiz_progress");   // ✅ ADD THIS
 }
   
