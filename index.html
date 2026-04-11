@@ -1060,6 +1060,7 @@ const serverResult = submitResult.result || {};
 localStorage.removeItem("quiz_progress");
 localStorage.removeItem("quiz_backup");
 localStorage.removeItem("quiz_session");
+localStorage.removeItem("quiz_refresh_count");
 $('loadingOverlay').classList.add('hidden');
 console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
 console.log("serverResult =", serverResult);
@@ -1187,7 +1188,24 @@ if (!localStorage.getItem("quiz_progress")) {
   state.active = null;
 }
 
+let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
+refreshCount += 1;
+localStorage.setItem("quiz_refresh_count", refreshCount);
+if (refreshCount > 3) {
+  alert("Maximum refresh attempts exceeded. Submitting quiz.");
 
+  state.sessionToken = localStorage.getItem("quiz_session");
+
+  const saved = localStorage.getItem("quiz_progress");
+  if (saved) {
+    const data = JSON.parse(saved);
+    state.responses = data.responses || [];
+    state.active = data.active || [];
+  }
+
+  finishQuiz();
+  return;
+}
 const saved = localStorage.getItem("quiz_progress");
 
 if (saved) {
