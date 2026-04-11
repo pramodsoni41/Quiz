@@ -956,7 +956,11 @@ q.answers.forEach((ans, idx) => {
 // 🔥 SINGLE MathJax call AFTER full DOM ready
 if (window.MathJax) {
   MathJax.typesetClear();
-  MathJax.typesetPromise([$('questionText'), $('answersBox')]);
+  if (window.MathJax) {
+  MathJax.typesetClear();
+  MathJax.typesetPromise([$('questionText'), $('answersBox')])
+    .catch(err => console.log("MathJax error:", err));
+}
 }
 
       state.timeLeft = q.time;
@@ -1259,7 +1263,7 @@ if (data.sessionToken === state.sessionToken) {
       }));
     }
 
-    state.current = resumeIndex + 1;
+    state.current = Math.min(resumeIndex + 1, state.active.length);
   } else {
     state.current = resumeIndex;
   }
@@ -2431,7 +2435,11 @@ q.answers.forEach((ans, idx) => {
 // 🔥 SINGLE MathJax call AFTER full DOM ready
 if (window.MathJax) {
   MathJax.typesetClear();
-  MathJax.typesetPromise([$('questionText'), $('answersBox')]);
+  if (window.MathJax) {
+  MathJax.typesetClear();
+  MathJax.typesetPromise([$('questionText'), $('answersBox')])
+    .catch(err => console.log("MathJax error:", err));
+}
 }
 
       state.timeLeft = q.time;
