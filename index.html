@@ -320,7 +320,7 @@
       <div class="grid2" style="margin-top:12px;">
         <div>
           <label for="phoneNo">Phone No</label>
-          <input id="phoneNo" placeholder="Optional" disabled />
+<input id="phoneNo" placeholder="Enter Phone Number (Required)" disabled />
         </div>
         <div>
           <label for="studentPassword">Password</label>
@@ -1182,8 +1182,8 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !password)) {
-  alert('Please enter name, registration number, and password.');
+if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !phoneNo || !password)) { 
+alert('Please enter Roll No, ID No, Phone Number, and Password.');
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
   return;
