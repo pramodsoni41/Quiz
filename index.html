@@ -1060,6 +1060,7 @@ const serverResult = submitResult.result || {};
 localStorage.removeItem("quiz_progress");
 localStorage.removeItem("quiz_backup");
 localStorage.removeItem("quiz_session");
+$('loadingOverlay').classList.add('hidden');
 console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
 console.log("serverResult =", serverResult);
 
@@ -1196,7 +1197,7 @@ if (data.sessionToken === state.sessionToken) {
   state.responses = data.responses || [];
   
   state.active = data.active || null;
-state.current = state.responses.length;
+state.current = data.current ?? state.responses.length;
   if (state.current > 0 && state.active && state.active.length) {
   showToast(`Resuming from Question ${Math.min(state.current + 1, state.active.length)}`);
 }
@@ -1207,7 +1208,15 @@ state.current = state.responses.length;
   
 }
           const fetched = await fetchQuestions();
-
+// 🔥 IMPORTANT FIX
+if (state.active && state.active.length > 0) {
+  // ✅ Resume → DO NOT reshuffle
+  state.questions = fetched.questions;
+} else {
+  // ✅ Fresh start → shuffle once
+  state.questions = fetched.questions;
+  state.active = prepareQuestions(fetched.questions);
+}
 		if (typeof fetched.meta.showAnswers === 'boolean') {
 		  SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
 		}
