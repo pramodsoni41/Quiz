@@ -1182,7 +1182,7 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && (!name || !regNo || !password)) {
+if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !password)) {
   alert('Please enter name, registration number, and password.');
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
