@@ -707,7 +707,7 @@ function ensureAntiCheatPanel() {
 
 state.violationTimer = setTimeout(() => {
   forfeitCurrentQuestion();
-}, 2000);
+}, 1000);
       }
 
 function handleReturn() {
@@ -756,7 +756,7 @@ function handleReturn() {
 
 state.violationTimer = setTimeout(() => {
   forfeitCurrentQuestion();
-}, 2000);
+}, 1000);
         }
       });
     }
@@ -885,7 +885,7 @@ function showToast(msg) {
   setTimeout(() => {
     t.classList.remove('show');
     setTimeout(() => t.classList.add('hidden'), 300);
-  }, 2000);
+  }, 1000);
 }
     function startTimer() {
       clearInterval(state.timer);
