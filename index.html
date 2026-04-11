@@ -701,8 +701,12 @@ function ensureAntiCheatPanel() {
 
         startAwayTimer();
         registerViolation(type);
-        state.violationTimer = setTimeout(() => {
-  forfeitCurrentQuestion();   // skip AFTER 2 sec
+        if (state.violationTimer) {
+  clearTimeout(state.violationTimer);
+}
+
+state.violationTimer = setTimeout(() => {
+  forfeitCurrentQuestion();
 }, 2000);
       }
 
@@ -746,7 +750,13 @@ function handleReturn() {
         if (!document.fullscreenElement) {
           state.antiCheat.fullscreenExitCount += 1;
           registerViolation('fullscreen_exit');
-          forfeitCurrentQuestion();
+          if (state.violationTimer) {
+  clearTimeout(state.violationTimer);
+}
+
+state.violationTimer = setTimeout(() => {
+  forfeitCurrentQuestion();
+}, 2000);
         }
       });
     }
@@ -814,18 +824,25 @@ function paintTimer() {
         originalSelectedIndex = q.optionMap[selectedIndex];
       }
 
-      state.responses.push({
-        questionId: q.questionId,
-        questionNo: state.current + 1,
-        question: q.question,
-        selectedIndex: originalSelectedIndex,
-        selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
-        timedOut,
-        reason:
-          state.currentQuestionReason ||
-          (timedOut ? 'timed_out' : (selectedIndex === -1 ? 'skipped' : 'answered')),
-        timeSpentSeconds
-      });
+state.responses.push({
+  questionId: q.questionId,
+  questionNo: state.current + 1,
+  question: q.question,
+  selectedIndex: originalSelectedIndex,
+  selectedAnswer: selectedIndex >= 0 ? q.answers[selectedIndex] : 'No answer',
+  timedOut,
+  reason:
+    state.currentQuestionReason ||
+    (timedOut ? 'timed_out' : (selectedIndex === -1 ? 'skipped' : 'answered')),
+  timeSpentSeconds
+});
+
+localStorage.setItem("quiz_progress", JSON.stringify({
+  sessionToken: state.sessionToken,
+  responses: state.responses,
+  current: state.current + 1,
+  active: state.active   // ✅ ADD THIS
+}));
 
       if (SHOW_INSTANT_FEEDBACK) {
         if (selectedIndex === -1 && !timedOut) {
@@ -993,6 +1010,8 @@ $('retryBtn').classList.remove('hidden');   // ✅ SHOW button
 }
 
 const serverResult = submitResult.result || {};
+localStorage.removeItem("quiz_progress");
+localStorage.removeItem("quiz_backup");
 console.log("SHOW_CORRECT_ANSWER =", SHOW_CORRECT_ANSWER);
 console.log("serverResult =", serverResult);
 
@@ -1056,6 +1075,7 @@ rows.forEach((review, i) => {
 	if (state.sessionToken !== null) return;   // ✅ ADD THIS
 	// 🔒 Disable button immediately
   $('startBtn').disabled = true;
+	  $('retryBtn').classList.add('hidden');
 
   // 🔒 Show loading overlay
   $('loadingOverlay').classList.remove('hidden');
@@ -1096,7 +1116,31 @@ rows.forEach((review, i) => {
 
         if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTIPLE_ATTEMPTS)) {
           state.sessionToken = loginResult.sessionToken || null;
+		  // reset
+state.current = 0;
+state.responses = [];
 
+
+
+const saved = localStorage.getItem("quiz_progress");
+
+if (saved) {
+  const data = JSON.parse(saved);
+
+if (data.sessionToken === state.sessionToken) {
+  state.responses = data.responses || [];
+  state.current = data.current || 0;
+  state.active = data.active || null;
+
+  if (state.current > 0 && state.active && state.active.length) {
+  showToast(`Resuming from Question ${Math.min(state.current + 1, state.active.length)}`);
+}
+
+} else {
+  localStorage.removeItem("quiz_progress");   // ✅ ADD THIS
+}
+  
+}
           const fetched = await fetchQuestions();
 
 		if (typeof fetched.meta.showAnswers === 'boolean') {
@@ -1128,11 +1172,12 @@ rows.forEach((review, i) => {
             regNo,
             phoneNo
           };
-          state.questions = fetched.questions;
-          state.active = prepareQuestions(fetched.questions);
-          state.current = 0;
-          state.score = 0;
-          state.responses = [];
+state.questions = fetched.questions;
+
+if (!state.active || state.active.length === 0) {
+  state.active = prepareQuestions(fetched.questions);
+}
+          
           state.isSubmitting = false;
           state.questionViolationHandled = false;
 
@@ -1152,11 +1197,13 @@ rows.forEach((review, i) => {
         }
 
       } catch (err) {
-        console.error(err);
-        alert('Unable to start quiz.');
-		$('loadingOverlay').classList.add('hidden');   // ✅ MUST
-  $('startBtn').disabled = false;                // ✅ MUST
-      }
+  console.error(err);
+  state.sessionToken = null;
+  alert('Unable to start quiz.');
+  $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
+}
+	  
     };
 
     $('submitAnswerBtn').onclick = () => {
@@ -1182,8 +1229,13 @@ rows.forEach((review, i) => {
 	};
     $('restartBtn').onclick = () => location.reload();
 $('retryBtn').onclick = async () => {
+  $('retryBtn').disabled = true;
+
   const backup = localStorage.getItem("quiz_backup");
-  if (!backup) return alert("No backup found");
+  if (!backup) {
+    $('retryBtn').disabled = false;
+    return alert("No backup found");
+  }
 
   const resultObj = JSON.parse(backup);
 
@@ -1195,6 +1247,7 @@ $('retryBtn').onclick = async () => {
     location.reload();
   } else {
     alert("Still failing. Try later.");
+    $('retryBtn').disabled = false;   // ✅ ADD THIS
   }
 };
     document.addEventListener("DOMContentLoaded", () => {
