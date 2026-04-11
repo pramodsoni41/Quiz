@@ -1268,7 +1268,7 @@ const resumeIndex = Math.min(
   (state.active?.length || 0)
 );
 
-state.current = resumeIndex;
+state.current = Math.min(resumeIndex, state.active.length);
 
       if (state.current < state.active.length) {
         showToast(`Resuming from Question ${state.current + 1}`);
@@ -1335,6 +1335,10 @@ if (!state.active || state.active.length === 0) {
           showSection('quiz');
           updateAntiCheatPanel();
           await enterQuizFullscreen();
+		  if (state.current >= state.active.length) {
+  finishQuiz();
+  return;
+}
           renderQuestion();
         }
 
