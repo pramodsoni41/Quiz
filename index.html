@@ -1450,16 +1450,18 @@ if (backup && savedSession) {
   }
 
   // ✅ normal resume
-  if (savedSession && savedProgress) {
-    state.sessionToken = savedSession;
+if (savedSession && savedProgress) {
+  state.sessionToken = savedSession;
 
-    $('setup').classList.add('hidden');
+  $('setup').classList.add('hidden');
 
-    $('loadingOverlay').classList.remove('hidden');
-    $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
+  $('loadingOverlay').classList.remove('hidden');
+  $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
 
-    $('startBtn').click();
-  }
+  setTimeout(() => {
+    $('startBtn').onclick();
+  }, 0);
+}
 
 });
 
