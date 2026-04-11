@@ -1099,7 +1099,6 @@ rows.forEach((review, i) => {
 
     $('startBtn').onclick = async () => {
 	
-	if (state.sessionToken !== null) return;   // ✅ ADD THIS
 	const savedSession = localStorage.getItem("quiz_session");
 
 if (savedSession && !state.sessionToken) {
@@ -1125,7 +1124,14 @@ if (!state.sessionToken && (!name || !regNo || !password)) {
 }
 
       try {
-        const loginResult = await validateStudentLogin(regNo, password);
+        let loginResult = null;
+
+// ✅ Skip login if resuming
+if (!state.sessionToken || (regNo && password)) {
+  loginResult = await validateStudentLogin(regNo, password);
+} else {
+  loginResult = { status: 'ok', name: 'Student' };  // dummy
+}
         console.log('loginResult =', loginResult);
 
         if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
