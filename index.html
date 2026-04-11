@@ -377,9 +377,9 @@ button.finish-btn:hover {
   <div class="answers" id="answersBox"></div>
 
   <div class="row">
-   <button class="submit-btn">Submit Answer</button>
-<button class="skip-btn">Skip</button>
-<button class="finish-btn">Finish Quiz</button>
+<button id="submitAnswerBtn" class="submit-btn">Submit Answer</button>
+<button id="skipBtn" class="skip-btn">Skip</button>
+<button id="finishBtn" class="finish-btn">Finish Quiz</button>
     <div class="pill timer" id="timerPillBottom">15 s</div>
   </div>
 
@@ -1382,28 +1382,27 @@ if (!state.active || state.active.length === 0) {
 	  
     };
 
-    $('submitAnswerBtn').onclick = () => {
-      if (state.selectedIndex === null) {
-        alert('Please select an answer first.');
-        return;
-      }
-      state.currentQuestionReason = 'answered';
-      recordAndContinue(state.selectedIndex, false);
-    };
+   document.addEventListener("DOMContentLoaded", () => {
 
-    $('skipBtn').onclick = () => {
-      state.currentQuestionReason = 'skipped';
-      recordAndContinue(-1, false);
-    };
+  $('submitAnswerBtn').onclick = () => {
+    if (state.selectedIndex === null) {
+      alert('Please select an answer first.');
+      return;
+    }
+    state.currentQuestionReason = 'answered';
+    recordAndContinue(state.selectedIndex, false);
+  };
 
-    $('finishBtn').onclick = () => {
-	  const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
-	  
-	  if (confirmFinish) {
-	  $('finishBtn').disabled = true;
-		finishQuiz();
-	  }
-	};
+  $('skipBtn').onclick = () => {
+    state.currentQuestionReason = 'skipped';
+    recordAndContinue(-1, false);
+  };
+
+  $('finishBtn').onclick = () => {
+    if (confirm("Finish quiz?")) finishQuiz();
+  };
+
+});
     $('restartBtn').onclick = () => location.reload();
 $('retryBtn').onclick = async () => {
 if (state.isSubmitting || submissionLock) return;
