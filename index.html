@@ -44,6 +44,36 @@
     margin: 0 auto;
     padding: 20px;
   }
+
+	/* Submit Answer (Primary) */
+button.submit-btn {
+  background: #2563eb;   /* blue */
+  color: white;
+}
+
+button.submit-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Skip (Neutral) */
+button.skip-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+button.skip-btn:hover {
+  background: #cbd5f5;
+}
+
+/* Finish Quiz (Danger / Important) */
+button.finish-btn {
+  background: #dc2626;
+  color: white;
+}
+
+button.finish-btn:hover {
+  background: #b91c1c;
+}
 .row .timer {
   margin-left: auto;
   font-size: 1.2rem;
@@ -347,9 +377,9 @@
   <div class="answers" id="answersBox"></div>
 
   <div class="row">
-    <button id="submitAnswerBtn" disabled>Submit Answer</button>
-    <button id="skipBtn" class="secondary">Skip</button>
-    <button id="finishBtn" class="secondary">Finish Quiz</button>
+   <button class="submit-btn">Submit Answer</button>
+<button class="skip-btn">Skip</button>
+<button class="finish-btn">Finish Quiz</button>
     <div class="pill timer" id="timerPillBottom">15 s</div>
   </div>
 
