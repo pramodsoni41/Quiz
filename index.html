@@ -385,7 +385,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6sDGk8EgPh8lMVMiuKhjw9POA2Lmj7lD_RzYDbjA14bkzub-wyk5Uh6g0TNkgUuo/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXWQF8X18Jn9ydQWSwgW9FUUZm5ghEDeO-8WYf7DQe3JiHTEQT0R8uIacKCC3gYUg/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1009,18 +1009,24 @@ async function sendResultToGoogleSheet(resultObj) {
         .replace(/'/g, '&#039;');
     }
 
-    async function finishQuiz() {
-	  if (!state.student || !state.sessionToken) {
-    alert("Session lost. Please restart.");
-    location.reload();
-    return;
+async function finishQuiz() {
+
+  // ✅ 1. Recover student
+  if (!state.student) {
+    const savedStudent = localStorage.getItem("quiz_student");
+    if (savedStudent) {
+      state.student = JSON.parse(savedStudent);
+    }
   }
-	if (!state.student) {
-  const savedStudent = localStorage.getItem("quiz_student");
-  if (savedStudent) {
-    state.student = JSON.parse(savedStudent);
+
+  // ✅ 2. Recover session
+  if (!state.sessionToken) {
+    const savedSession = localStorage.getItem("quiz_session");
+    if (savedSession) {
+      state.sessionToken = savedSession;
+    }
   }
-}
+
 const savedProgress = localStorage.getItem("quiz_progress");
 
 if ((!state.responses || state.responses.length === 0) && savedProgress) {
@@ -1037,6 +1043,16 @@ if ((!state.responses || state.responses.length === 0) && savedProgress) {
 
   } catch (e) {}
 }
+
+
+  // ✅ 4. NOW validate
+  if (!state.student || !state.sessionToken) {
+    alert("Session lost. Please restart.");
+    location.reload();
+    return;
+  }
+  
+
       if (state.isSubmitting || submissionLock) return;
 
   submissionLock = true;   // 🔒 HARD LOCK
