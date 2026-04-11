@@ -979,7 +979,7 @@ if (window.MathJax) {
     }
 
 async function sendResultToGoogleSheet(resultObj) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) {
     try {
       const res = await postJSON({
         action: 'submitQuiz',
@@ -990,7 +990,7 @@ async function sendResultToGoogleSheet(resultObj) {
 
     } catch (err) {}
 
-    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    await new Promise(r => setTimeout(r, 2000 * (i + 1)));
   }
 
   return { status: 'failed' };
