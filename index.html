@@ -788,6 +788,12 @@ function paintTimer() {
       if (state.isSubmitting) return;
 
       clearInterval(state.timer);
+	  if (!state.active || !state.active[state.current]) {
+    alert("Quiz data error. Please restart.");
+    location.reload();
+    return;
+  }
+
       const q = state.active[state.current];
       const timeSpentSeconds = state.questionStartTime
         ? Math.round((Date.now() - state.questionStartTime) / 1000)
@@ -895,6 +901,11 @@ function showToast(msg) {
     }
 
     function renderQuestion() {
+	 if (!state.active || !state.active[state.current]) {
+    alert("Quiz data error. Please restart.");
+    location.reload();
+    return;
+  }
       const q = state.active[state.current];
       state.selectedIndex = null;
       state.questionStartTime = Date.now();
