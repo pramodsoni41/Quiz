@@ -860,7 +860,7 @@ state.responses.push({
 localStorage.setItem("quiz_progress", JSON.stringify({
   sessionToken: state.sessionToken,
   responses: state.responses,
-  current: state.current + 1,
+  current: state.current + (selectedIndex !== null || timedOut ? 1 : 0)
   active: state.active   // ✅ ADD THIS
 }));
 
@@ -1268,8 +1268,7 @@ const resumeIndex = Math.min(
   (state.active?.length || 0)
 );
 
-state.current = Math.min(resumeIndex, state.active.length);
-
+state.current = Math.min(resumeIndex + 1, state.active.length);
       if (state.current < state.active.length) {
         showToast(`Resuming from Question ${state.current + 1}`);
       }
