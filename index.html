@@ -1010,6 +1010,11 @@ async function sendResultToGoogleSheet(resultObj) {
     }
 
     async function finishQuiz() {
+	  if (!state.student || !state.sessionToken) {
+    alert("Session lost. Please restart.");
+    location.reload();
+    return;
+  }
 	if (!state.student) {
   const savedStudent = localStorage.getItem("quiz_student");
   if (savedStudent) {
