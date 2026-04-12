@@ -526,42 +526,94 @@ async function loadQuizMetaOnly() {
     if (meta.quizName) $('quizTitle').textContent = meta.quizName;
     $('quizIntro').textContent = 'Enter your details and login password to begin.';
 
-if (meta.dueDate) {
+    // ✅ DEADLINE BLOCK
+    if (meta.dueDate) {
+      const dueTime = new Date(meta.dueDate).getTime();
+      const nowTime = Date.now();
 
-  const dueTime = new Date(meta.dueDate).getTime();
-  const nowTime = Date.now();
+      if (Number.isFinite(dueTime)) {
+        const formatted = new Date(dueTime).toLocaleString('en-IN', {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        });
 
-  // ✅ Validate date
-  if (!Number.isFinite(dueTime)) {
-    console.error("Invalid due date");
-  } else {
+        $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
 
-    // ✅ Display formatted date
-    const formatted = new Date(dueTime).toLocaleString('en-IN', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    });
+        if (nowTime > dueTime) {
+          $('quizIntro').textContent = 'Login closed. Deadline has passed.';
+          $('studentName').disabled = true;
+          $('regNo').disabled = true;
+          $('phoneNo').disabled = true;
+          $('studentPassword').disabled = true;
+          $('startBtn').disabled = true;
+          $('startBtn').textContent = 'Login Closed';
+          return;
+        }
+      }
+    }
 
-  if (fetched.meta.dueDate) {
-  const due = new Date(fetched.meta.dueDate);
-  const formatted = due.toLocaleString('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  });
-  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-}
+    // ✅ KEEP EVERYTHING INSIDE FUNCTION
+    if (meta.status) {
+      QUIZ_STATUS = String(meta.status).toUpperCase();
+    }
 
-    // ✅ Enforce deadline
-    if (nowTime > dueTime) {
-      $('quizIntro').textContent = 'Login closed. Deadline has passed.';
+    if (typeof meta.showAnswers === 'boolean') {
+      SHOW_CORRECT_ANSWER = meta.showAnswers;
+    }
+
+    if (typeof meta.showInstantFeedback === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
+    }
+
+    if (typeof meta.allowMultipleAttempts === 'boolean') {
+      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
+    }
+
+    if (typeof meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = meta.showSummary;
+    }
+
+    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
+      CORRECT_MARKS = meta.correctMarks;
+    }
+
+    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
+      INCORRECT_MARKS = meta.incorrectMarks;
+    }
+
+    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+
+    $('quizInstructions').textContent =
+      meta.instructions || 'Enter your details and login password to begin.';
+    $('markingSchemeBox').textContent = markingText;
+
+    if (QUIZ_STATUS !== "OPEN") {
+      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
+      $('quizIntro').textContent = 'This quiz is currently closed.';
+      $('quizInstructions').textContent = 'Please contact the instructor';
+      $('markingSchemeBox').textContent = markingText;
+
       $('studentName').disabled = true;
       $('regNo').disabled = true;
       $('phoneNo').disabled = true;
       $('studentPassword').disabled = true;
       $('startBtn').disabled = true;
-      $('startBtn').textContent = 'Login Closed';
+      $('startBtn').textContent = 'Quiz Closed';
       return;
     }
+
+    // ✅ ENABLE INPUTS
+    $('studentName').disabled = false;
+    $('regNo').disabled = false;
+    $('phoneNo').disabled = false;
+    $('studentPassword').disabled = false;
+    $('startBtn').disabled = false;
+    $('startBtn').textContent = "Start Quiz";
+
+  } catch (err) {
+    console.error('Could not load quiz metadata:', err);
+    $('quizTitle').textContent = "Quiz could not load";
+    $('quizInstructions').textContent = "Please refresh the page.";
   }
 }
     if (meta.status) {
@@ -1384,7 +1436,14 @@ if (!state.active || state.active.length === 0) {
 		  
 		  
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
-          if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
+          if (fetched.meta.dueDate) {
+  const due = new Date(fetched.meta.dueDate);
+  const formatted = due.toLocaleString('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  });
+  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
+}
           $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
 
           state.student = {
