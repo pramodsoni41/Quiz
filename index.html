@@ -44,36 +44,6 @@
     margin: 0 auto;
     padding: 20px;
   }
-
-	/* Submit Answer (Primary) */
-button.submit-btn {
-  background: #2563eb;   /* blue */
-  color: white;
-}
-
-button.submit-btn:hover {
-  background: #1d4ed8;
-}
-
-/* Skip (Neutral) */
-button.skip-btn {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-button.skip-btn:hover {
-  background: #cbd5f5;
-}
-
-/* Finish Quiz (Danger / Important) */
-button.finish-btn {
-  background: #dc2626;
-  color: white;
-}
-
-button.finish-btn:hover {
-  background: #b91c1c;
-}
 .row .timer {
   margin-left: auto;
   font-size: 1.2rem;
@@ -243,11 +213,10 @@ button.finish-btn:hover {
     min-height:84px;
   }
 
-.answer.selected {
-  border-color: #28a745;         /* green border */
-  background: #d4edda;           /* light green background */
-  color: #155724;                /* dark green text */
-}
+  .answer.selected {
+    border-color: var(--accent);
+    background: #dbeafe;
+  }
 
   .result-correct td { background: #f0fdf4; }
   .result-wrong td { background: #fef2f2; }
@@ -266,9 +235,9 @@ button.finish-btn:hover {
 
   .row {
     display:flex;
-    gap:18px;
+    gap:12px;
     flex-wrap:wrap;
-    margin-top:22px;
+    margin-top:18px;
   }
 
   .notice {
@@ -351,7 +320,7 @@ button.finish-btn:hover {
       <div class="grid2" style="margin-top:12px;">
         <div>
           <label for="phoneNo">Phone No</label>
-<input id="phoneNo" placeholder="Enter Phone Number (Required)" disabled />
+          <input id="phoneNo" placeholder="Optional" disabled />
         </div>
         <div>
           <label for="studentPassword">Password</label>
@@ -377,9 +346,9 @@ button.finish-btn:hover {
   <div class="answers" id="answersBox"></div>
 
   <div class="row">
-<button id="submitAnswerBtn" class="submit-btn">Submit Answer</button>
-<button id="skipBtn" class="skip-btn">Skip</button>
-<button id="finishBtn" class="finish-btn">Finish Quiz</button>
+    <button id="submitAnswerBtn" disabled>Submit Answer</button>
+    <button id="skipBtn" class="secondary">Skip</button>
+    <button id="finishBtn" class="secondary">Finish Quiz</button>
     <div class="pill timer" id="timerPillBottom">15 s</div>
   </div>
 
@@ -416,7 +385,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxj5MpPuyFwH2qvzfvgTJi70NcIaP8_keY5b4JlhGoDzEUhWjprrvrnX3xeto14hpc/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXWQF8X18Jn9ydQWSwgW9FUUZm5ghEDeO-8WYf7DQe3JiHTEQT0R8uIacKCC3gYUg/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -496,12 +465,7 @@ button.finish-btn:hover {
         action: 'getQuestions',
         sessionToken: state.sessionToken
       });
-if (data.status === 'expired') {
-  alert('Quiz cannot be started. Deadline has passed.');
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-  throw new Error('Quiz expired');
-}
+
       if (data.status !== 'ok') {
         throw new Error(data.message || JSON.stringify(data));
       }
@@ -526,46 +490,58 @@ async function loadQuizMetaOnly() {
     if (meta.quizName) $('quizTitle').textContent = meta.quizName;
     $('quizIntro').textContent = 'Enter your details and login password to begin.';
 
-    // ✅ DEADLINE BLOCK
     if (meta.dueDate) {
-      const dueTime = new Date(meta.dueDate).getTime();
-      const nowTime = Date.now();
-
-      if (Number.isFinite(dueTime)) {
-        const formatted = new Date(dueTime).toLocaleString('en-IN', {
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        });
-
-        $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-
-        if (nowTime > dueTime) {
-          $('quizIntro').textContent = 'Login closed. Deadline has passed.';
-          $('studentName').disabled = true;
-          $('regNo').disabled = true;
-          $('phoneNo').disabled = true;
-          $('studentPassword').disabled = true;
-          $('startBtn').disabled = true;
-          $('startBtn').textContent = 'Login Closed';
-          return;
-        }
-      }
+      $('quizDue').innerHTML = `<strong>Due Date:</strong> ${meta.dueDate}`;
     }
 
-// ✅ SET from meta FIRST
-if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
-  CORRECT_MARKS = meta.correctMarks;
-}
-if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
-  INCORRECT_MARKS = meta.incorrectMarks;
-}
+    if (meta.status) {
+      QUIZ_STATUS = String(meta.status).toUpperCase();
+    }
 
-// ✅ THEN update UI
-$('markingSchemeBox').textContent =
-  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
-   
+    if (typeof meta.showAnswers === 'boolean') {
+      SHOW_CORRECT_ANSWER = meta.showAnswers;
+    }
 
-    // ✅ ENABLE INPUTS
+    if (typeof meta.showInstantFeedback === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
+    }
+
+    if (typeof meta.allowMultipleAttempts === 'boolean') {
+      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
+    }
+
+    if (typeof meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = meta.showSummary;
+    }
+
+    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
+      CORRECT_MARKS = meta.correctMarks;
+    }
+
+    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
+      INCORRECT_MARKS = meta.incorrectMarks;
+    }
+
+    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+
+    $('quizInstructions').textContent =
+      meta.instructions || 'Enter your details and login password to begin.';
+    $('markingSchemeBox').textContent = markingText;
+
+    if (QUIZ_STATUS !== "OPEN") {
+      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
+      $('quizIntro').textContent = 'This quiz is currently closed.';
+      $('quizInstructions').textContent = 'Please contact the instructor.';
+      $('markingSchemeBox').textContent = markingText;
+      $('studentName').disabled = true;
+      $('regNo').disabled = true;
+      $('phoneNo').disabled = true;
+      $('studentPassword').disabled = true;
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = 'Quiz Closed';
+      return;
+    }
+
     $('studentName').disabled = false;
     $('regNo').disabled = false;
     $('phoneNo').disabled = false;
@@ -579,9 +555,6 @@ $('markingSchemeBox').textContent =
     $('quizInstructions').textContent = "Please refresh the page.";
   }
 }
-    
-
-
 
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
@@ -1092,7 +1065,6 @@ $('loadingOverlay').querySelector('.loadingText').textContent = "Submitting...";
       clearInterval(state.timer);
       state.antiCheat.started = false;
       stopAwayTimer();
-state.responses = state.responses.slice(0, state.active.length);
 
       const resultObj = {
         sessionToken: state.sessionToken,
@@ -1210,8 +1182,8 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !phoneNo || !password)) { 
-alert('Please enter Roll No, ID No, Phone Number, and Password.');
+if (!state.sessionToken && (!name || !regNo || !password)) {
+  alert('Please enter name, registration number, and password.');
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
   return;
@@ -1240,12 +1212,6 @@ if (!state.sessionToken || (regNo && password)) {
   $('startBtn').disabled = false;
           return;
         }
-		  if (loginResult.status === 'expired') {
-  alert('Login closed. Deadline has passed.');
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-  return;
-}
         if (loginResult.status === 'invalid') {
           alert('Invalid registration number or password.');
 		  $('loadingOverlay').classList.add('hidden');
@@ -1262,8 +1228,7 @@ if (!state.sessionToken || (regNo && password)) {
 if (!localStorage.getItem("quiz_progress")) {
   state.current = 0;
   state.responses = [];
-  
-  // ❌ do NOT touch state.active here
+  state.active = [];
 }
 
 let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
@@ -1280,7 +1245,7 @@ if (refreshCount > 5) {
  if (saved) {
     const data = JSON.parse(saved);
     state.responses = data.responses || [];
-    state.active = Array.isArray(data.active) ? data.active : [];
+    state.active = data.active || [];
   }
 
   finishQuiz();
@@ -1298,10 +1263,13 @@ if (saved) {
       state.responses = data.responses || [];
       state.active = Array.isArray(data.active) ? data.active : [];
 
-const resumeIndex = Number.isInteger(data.current) ? data.current : 0;
+const resumeIndex = Math.min(
+  Number.isInteger(data.current) ? data.current : 0,
+  (state.active?.length || 0)
+);
 
-// ✅ ALWAYS move forward on refresh
-state.current = Math.min(resumeIndex + 1, state.active.length - 1);
+state.current = resumeIndex;
+
       if (state.current < state.active.length) {
         showToast(`Resuming from Question ${state.current + 1}`);
       }
@@ -1318,6 +1286,8 @@ const fetched = await fetchQuestions();
 if (!state.active || state.active.length === 0) {
   state.questions = fetched.questions;
   state.active = prepareQuestions(fetched.questions);
+} else {
+  state.questions = fetched.questions;
 }
 
 		if (typeof fetched.meta.showAnswers === 'boolean') {
@@ -1336,17 +1306,12 @@ if (!state.active || state.active.length === 0) {
 		  INCORRECT_MARKS = fetched.meta.incorrectMarks;
 		}
 
+		$('markingSchemeBox').textContent =
+		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
 		  
 		  
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
-          if (fetched.meta.dueDate) {
-  const due = new Date(fetched.meta.dueDate);
-  const formatted = due.toLocaleString('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  });
-  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-}
+          if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
           $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
 
           state.student = {
@@ -1372,10 +1337,6 @@ if (!state.active || state.active.length === 0) {
           showSection('quiz');
           updateAntiCheatPanel();
           await enterQuizFullscreen();
-		  if (state.current >= state.active.length) {
-  finishQuiz();
-  return;
-}
           renderQuestion();
         }
 
@@ -1389,27 +1350,28 @@ if (!state.active || state.active.length === 0) {
 	  
     };
 
-   document.addEventListener("DOMContentLoaded", () => {
+    $('submitAnswerBtn').onclick = () => {
+      if (state.selectedIndex === null) {
+        alert('Please select an answer first.');
+        return;
+      }
+      state.currentQuestionReason = 'answered';
+      recordAndContinue(state.selectedIndex, false);
+    };
 
-  $('submitAnswerBtn').onclick = () => {
-    if (state.selectedIndex === null) {
-      alert('Please select an answer first.');
-      return;
-    }
-    state.currentQuestionReason = 'answered';
-    recordAndContinue(state.selectedIndex, false);
-  };
+    $('skipBtn').onclick = () => {
+      state.currentQuestionReason = 'skipped';
+      recordAndContinue(-1, false);
+    };
 
-  $('skipBtn').onclick = () => {
-    state.currentQuestionReason = 'skipped';
-    recordAndContinue(-1, false);
-  };
-
-  $('finishBtn').onclick = () => {
-    if (confirm("Finish quiz?")) finishQuiz();
-  };
-
-});
+    $('finishBtn').onclick = () => {
+	  const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
+	  
+	  if (confirmFinish) {
+	  $('finishBtn').disabled = true;
+		finishQuiz();
+	  }
+	};
     $('restartBtn').onclick = () => location.reload();
 $('retryBtn').onclick = async () => {
 if (state.isSubmitting || submissionLock) return;
@@ -1479,7 +1441,7 @@ if (backup && savedSession) {
   if (savedProgress) {
     const data = JSON.parse(savedProgress);
 
-    if (Array.isArray(data.active) && data.current >= data.active.length) {
+    if (data.current >= (data.active?.length || 0)) {
       state.sessionToken = savedSession;   // ✅ ADD THIS
       finishQuiz();
       return;
@@ -1487,18 +1449,16 @@ if (backup && savedSession) {
   }
 
   // ✅ normal resume
-if (savedSession && savedProgress) {
-  state.sessionToken = savedSession;
+  if (savedSession && savedProgress) {
+    state.sessionToken = savedSession;
 
-  $('setup').classList.add('hidden');
+    $('setup').classList.add('hidden');
 
-  $('loadingOverlay').classList.remove('hidden');
-  $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
+    $('loadingOverlay').classList.remove('hidden');
+    $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
 
-  setTimeout(() => {
-    $('startBtn').onclick();
-  }, 0);
-}
+    $('startBtn').click();
+  }
 
 });
 
