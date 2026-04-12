@@ -526,29 +526,42 @@ async function loadQuizMetaOnly() {
     if (meta.quizName) $('quizTitle').textContent = meta.quizName;
     $('quizIntro').textContent = 'Enter your details and login password to begin.';
 
-	if (meta.dueDate) {
-	  const due = new Date(meta.dueDate);
-	
-	  const formatted = due.toLocaleString('en-IN', {
-	    dateStyle: 'medium',
-	    timeStyle: 'short'
-	  });
-	
-	  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-	}
 if (meta.dueDate) {
-  const now = new Date();
-  const due = new Date(meta.dueDate);
 
-  if (!isNaN(due.getTime()) && now.getTime() > due.getTime()) {
-    $('quizIntro').textContent = 'Login closed. Deadline has passed.';
-    $('studentName').disabled = true;
-    $('regNo').disabled = true;
-    $('phoneNo').disabled = true;
-    $('studentPassword').disabled = true;
-    $('startBtn').disabled = true;
-    $('startBtn').textContent = 'Login Closed';
-    return;
+  const dueTime = new Date(meta.dueDate).getTime();
+  const nowTime = Date.now();
+
+  // ✅ Validate date
+  if (!Number.isFinite(dueTime)) {
+    console.error("Invalid due date");
+  } else {
+
+    // ✅ Display formatted date
+    const formatted = new Date(dueTime).toLocaleString('en-IN', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+
+  if (fetched.meta.dueDate) {
+  const due = new Date(fetched.meta.dueDate);
+  const formatted = due.toLocaleString('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  });
+  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
+}
+
+    // ✅ Enforce deadline
+    if (nowTime > dueTime) {
+      $('quizIntro').textContent = 'Login closed. Deadline has passed.';
+      $('studentName').disabled = true;
+      $('regNo').disabled = true;
+      $('phoneNo').disabled = true;
+      $('studentPassword').disabled = true;
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = 'Login Closed';
+      return;
+    }
   }
 }
     if (meta.status) {
