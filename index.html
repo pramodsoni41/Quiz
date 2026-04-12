@@ -552,55 +552,7 @@ async function loadQuizMetaOnly() {
       }
     }
 
-    // ✅ KEEP EVERYTHING INSIDE FUNCTION
-    if (meta.status) {
-      QUIZ_STATUS = String(meta.status).toUpperCase();
-    }
-
-    if (typeof meta.showAnswers === 'boolean') {
-      SHOW_CORRECT_ANSWER = meta.showAnswers;
-    }
-
-    if (typeof meta.showInstantFeedback === 'boolean') {
-      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
-    }
-
-    if (typeof meta.allowMultipleAttempts === 'boolean') {
-      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
-    }
-
-    if (typeof meta.showSummary === 'boolean') {
-      SHOW_RESULT_TABLE = meta.showSummary;
-    }
-
-    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
-      CORRECT_MARKS = meta.correctMarks;
-    }
-
-    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
-      INCORRECT_MARKS = meta.incorrectMarks;
-    }
-
-    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
-
-    $('quizInstructions').textContent =
-      meta.instructions || 'Enter your details and login password to begin.';
-    $('markingSchemeBox').textContent = markingText;
-
-    if (QUIZ_STATUS !== "OPEN") {
-      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
-      $('quizIntro').textContent = 'This quiz is currently closed.';
-      $('quizInstructions').textContent = 'Please contact the instructor';
-      $('markingSchemeBox').textContent = markingText;
-
-      $('studentName').disabled = true;
-      $('regNo').disabled = true;
-      $('phoneNo').disabled = true;
-      $('studentPassword').disabled = true;
-      $('startBtn').disabled = true;
-      $('startBtn').textContent = 'Quiz Closed';
-      return;
-    }
+   
 
     // ✅ ENABLE INPUTS
     $('studentName').disabled = false;
@@ -616,67 +568,9 @@ async function loadQuizMetaOnly() {
     $('quizInstructions').textContent = "Please refresh the page.";
   }
 }
-    if (meta.status) {
-      QUIZ_STATUS = String(meta.status).toUpperCase();
-    }
+    
 
-    if (typeof meta.showAnswers === 'boolean') {
-      SHOW_CORRECT_ANSWER = meta.showAnswers;
-    }
 
-    if (typeof meta.showInstantFeedback === 'boolean') {
-      SHOW_INSTANT_FEEDBACK = meta.showInstantFeedback;
-    }
-
-    if (typeof meta.allowMultipleAttempts === 'boolean') {
-      ALLOW_MULTIPLE_ATTEMPTS = meta.allowMultipleAttempts;
-    }
-
-    if (typeof meta.showSummary === 'boolean') {
-      SHOW_RESULT_TABLE = meta.showSummary;
-    }
-
-    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
-      CORRECT_MARKS = meta.correctMarks;
-    }
-
-    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
-      INCORRECT_MARKS = meta.incorrectMarks;
-    }
-
-    const markingText = `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
-
-    $('quizInstructions').textContent =
-      meta.instructions || 'Enter your details and login password to begin.';
-    $('markingSchemeBox').textContent = markingText;
-
-    if (QUIZ_STATUS !== "OPEN") {
-      $('quizTitle').textContent = meta.quizName || 'Quiz Closed';
-      $('quizIntro').textContent = 'This quiz is currently closed.';
-      $('quizInstructions').textContent = 'Please contact the instructor.';
-      $('markingSchemeBox').textContent = markingText;
-      $('studentName').disabled = true;
-      $('regNo').disabled = true;
-      $('phoneNo').disabled = true;
-      $('studentPassword').disabled = true;
-      $('startBtn').disabled = true;
-      $('startBtn').textContent = 'Quiz Closed';
-      return;
-    }
-
-    $('studentName').disabled = false;
-    $('regNo').disabled = false;
-    $('phoneNo').disabled = false;
-    $('studentPassword').disabled = false;
-    $('startBtn').disabled = false;
-    $('startBtn').textContent = "Start Quiz";
-
-  } catch (err) {
-    console.error('Could not load quiz metadata:', err);
-    $('quizTitle').textContent = "Quiz could not load";
-    $('quizInstructions').textContent = "Please refresh the page.";
-  }
-}
 
     function prepareQuestions(rawQuestions) {
       const shuffledQuestions = shuffle(rawQuestions).map(q => {
