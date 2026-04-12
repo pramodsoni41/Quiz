@@ -526,9 +526,16 @@ async function loadQuizMetaOnly() {
     if (meta.quizName) $('quizTitle').textContent = meta.quizName;
     $('quizIntro').textContent = 'Enter your details and login password to begin.';
 
-    if (meta.dueDate) {
-      $('quizDue').innerHTML = `<strong>Due Date:</strong> ${meta.dueDate}`;
-    }
+	if (meta.dueDate) {
+	  const due = new Date(meta.dueDate);
+	
+	  const formatted = due.toLocaleString('en-IN', {
+	    dateStyle: 'medium',
+	    timeStyle: 'short'
+	  });
+	
+	  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
+	}
 if (meta.dueDate) {
   const now = new Date();
   const due = new Date(meta.dueDate);
