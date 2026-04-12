@@ -552,6 +552,17 @@ async function loadQuizMetaOnly() {
       }
     }
 
+// ✅ SET from meta FIRST
+if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
+  CORRECT_MARKS = meta.correctMarks;
+}
+if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
+  INCORRECT_MARKS = meta.incorrectMarks;
+}
+
+// ✅ THEN update UI
+$('markingSchemeBox').textContent =
+  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
    
 
     // ✅ ENABLE INPUTS
@@ -1325,8 +1336,6 @@ if (!state.active || state.active.length === 0) {
 		  INCORRECT_MARKS = fetched.meta.incorrectMarks;
 		}
 
-		$('markingSchemeBox').textContent =
-		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
 		  
 		  
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
