@@ -298,13 +298,13 @@
       <p class="muted" id="quizIntro">Fetching quiz from server...</p>
       <p class="muted" id="quizDue"></p>
 
-	<div class="notice" id="quizInstructions">
-	  Enter your details and login password to begin.
-	</div>
+  <div class="notice" id="quizInstructions">
+    Enter your details and login password to begin.
+  </div>
 
-	<div class="notice" id="markingSchemeBox">
-	  Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
-	</div>
+  <div class="notice" id="markingSchemeBox">
+    Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
+  </div>
 
       <div class="grid2">
         <div>
@@ -392,9 +392,9 @@
     let SHOW_RESULT_TABLE = true;
     let ALLOW_MULTIPLE_ATTEMPTS = false;
     let QUIZ_STATUS = "OPEN";
-	let CORRECT_MARKS = 1;
-	let INCORRECT_MARKS = 0;
-	let submissionLock = false;
+  let CORRECT_MARKS = 1;
+  let INCORRECT_MARKS = 0;
+  let submissionLock = false;
     const state = {
       sessionToken: null,
       student: null,
@@ -410,7 +410,7 @@
       questionStartTime: null,
       currentQuestionReason: null,
       questionViolationHandled: false,
-	violationTimer: null,
+  violationTimer: null,
       antiCheat: {
         hiddenCount: 0,
         blurCount: 0,
@@ -418,7 +418,7 @@
         awayStart: null,
         totalAwayMs: 0,
         log: [],
-		
+    
         started: false,
         leftScreen: false
       }
@@ -802,7 +802,7 @@ function paintTimer() {
       if (state.isSubmitting || submissionLock) return;
 
       clearInterval(state.timer);
-	  if (!state.active || !state.active[state.current]) {
+    if (!state.active || !state.active[state.current]) {
     alert("Quiz data error. Please restart.");
     location.reload();
     return;
@@ -819,21 +819,21 @@ function paintTimer() {
         b.classList.remove('selected');
       });
 
-	let reasonText = "";
+  let reasonText = "";
 
-	if (state.currentQuestionReason === 'skipped') {
-	  reasonText = "Skipped by user";
-	}
-	else if (state.currentQuestionReason === 'timed_out') {
-	  reasonText = "Time expired";
-	}
-	else if (state.currentQuestionReason === 'focus_lost') {
-	  reasonText = "Left screen (auto skipped)";
-	}
+  if (state.currentQuestionReason === 'skipped') {
+    reasonText = "Skipped by user";
+  }
+  else if (state.currentQuestionReason === 'timed_out') {
+    reasonText = "Time expired";
+  }
+  else if (state.currentQuestionReason === 'focus_lost') {
+    reasonText = "Left screen (auto skipped)";
+  }
 
-	if (selectedIndex === -1) {
-	  showToast(reasonText);   // ✅ THIS WAS MISSING
-	}
+  if (selectedIndex === -1) {
+    showToast(reasonText);   // ✅ THIS WAS MISSING
+  }
       $('submitAnswerBtn').disabled = true;
       $('finishBtn').disabled = true;
       $('skipBtn').disabled = true;
@@ -915,7 +915,7 @@ function showToast(msg) {
     }
 
     function renderQuestion() {
-	 if (!state.active || !state.active[state.current]) {
+   if (!state.active || !state.active[state.current]) {
     alert("Quiz data error. Please restart.");
     location.reload();
     return;
@@ -929,7 +929,7 @@ function showToast(msg) {
       $('progressPill').textContent = `Question ${state.current + 1} / ${state.active.length}`;
       $('studentPill').textContent = `${state.student.name} (${state.student.regNo})`;
       $('questionText').innerHTML = q.question;
-	  
+    
       $('answersBox').innerHTML = '';
       $('quizNotice').textContent = 'Select one answer and click Submit Answer.';
       $('finishBtn').disabled = false;
@@ -1111,7 +1111,7 @@ console.log("serverResult =", serverResult);
 
 
       const totalQuestions = Number(serverResult.totalQuestions || 0);
-		const maxMarks = serverResult.maxMarks || '0.00';
+    const maxMarks = serverResult.maxMarks || '0.00';
 $('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
@@ -1164,15 +1164,15 @@ rows.forEach((review, i) => {
     }
 
     $('startBtn').onclick = async () => {
-	
-	const savedSession = localStorage.getItem("quiz_session");
+  
+  const savedSession = localStorage.getItem("quiz_session");
 
 if (savedSession && !state.sessionToken) {
   state.sessionToken = savedSession;
 }
-	// 🔒 Disable button immediately
+  // 🔒 Disable button immediately
   $('startBtn').disabled = true;
-	  $('retryBtn').classList.add('hidden');
+    $('retryBtn').classList.add('hidden');
 
   // 🔒 Show loading overlay
   $('loadingOverlay').classList.remove('hidden');
@@ -1202,19 +1202,19 @@ if (!state.sessionToken || (regNo && password)) {
 
         if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
           alert('You have already attempted this quiz. Multiple attempts are not allowed.');
-		    $('loadingOverlay').classList.add('hidden');
+        $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
           return;
         }
         if (loginResult.status === 'closed') {
           alert('Quiz is currently closed.');
-		  $('loadingOverlay').classList.add('hidden');
+      $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
           return;
         }
         if (loginResult.status === 'invalid') {
           alert('Invalid registration number or password.');
-		  $('loadingOverlay').classList.add('hidden');
+      $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
           return;
         }
@@ -1223,8 +1223,8 @@ if (!state.sessionToken || (regNo && password)) {
           if (loginResult.sessionToken) {
   state.sessionToken = loginResult.sessionToken;
 }
-		  localStorage.setItem("quiz_session", state.sessionToken);
-		  // reset
+      localStorage.setItem("quiz_session", state.sessionToken);
+      // reset
 if (!localStorage.getItem("quiz_progress")) {
   state.current = 0;
   state.responses = [];
@@ -1290,26 +1290,26 @@ if (!state.active || state.active.length === 0) {
   state.questions = fetched.questions;
 }
 
-		if (typeof fetched.meta.showAnswers === 'boolean') {
-		  SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
-		}
-		if (typeof fetched.meta.showInstantFeedback === 'boolean') {
-		  SHOW_INSTANT_FEEDBACK = fetched.meta.showInstantFeedback;
-		}
-		if (typeof fetched.meta.showSummary === 'boolean') {
-		  SHOW_RESULT_TABLE = fetched.meta.showSummary;
-		}
-		if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks)) {
-		  CORRECT_MARKS = fetched.meta.correctMarks;
-		}
-		if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) {
-		  INCORRECT_MARKS = fetched.meta.incorrectMarks;
-		}
+    if (typeof fetched.meta.showAnswers === 'boolean') {
+      SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
+    }
+    if (typeof fetched.meta.showInstantFeedback === 'boolean') {
+      SHOW_INSTANT_FEEDBACK = fetched.meta.showInstantFeedback;
+    }
+    if (typeof fetched.meta.showSummary === 'boolean') {
+      SHOW_RESULT_TABLE = fetched.meta.showSummary;
+    }
+    if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks)) {
+      CORRECT_MARKS = fetched.meta.correctMarks;
+    }
+    if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) {
+      INCORRECT_MARKS = fetched.meta.incorrectMarks;
+    }
 
-		$('markingSchemeBox').textContent =
-		  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
-		  
-		  
+    $('markingSchemeBox').textContent =
+      `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+      
+      
           if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
           if (fetched.meta.dueDate) $('quizDue').innerHTML = `<strong>Due Date:</strong> ${fetched.meta.dueDate}`;
           $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
@@ -1319,7 +1319,7 @@ if (!state.active || state.active.length === 0) {
             regNo,
             phoneNo
           };
-		  localStorage.setItem("quiz_student", JSON.stringify(state.student));
+      localStorage.setItem("quiz_student", JSON.stringify(state.student));
 
           
           state.isSubmitting = false;
@@ -1333,7 +1333,7 @@ if (!state.active || state.active.length === 0) {
           state.antiCheat.log = [];
           state.antiCheat.started = true;
           state.antiCheat.leftScreen = false;
-	$('loadingOverlay').classList.add('hidden');
+  $('loadingOverlay').classList.add('hidden');
           showSection('quiz');
           updateAntiCheatPanel();
           await enterQuizFullscreen();
@@ -1347,7 +1347,7 @@ if (!state.active || state.active.length === 0) {
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
 }
-	  
+    
     };
 
     $('submitAnswerBtn').onclick = () => {
@@ -1365,13 +1365,13 @@ if (!state.active || state.active.length === 0) {
     };
 
     $('finishBtn').onclick = () => {
-	  const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
-	  
-	  if (confirmFinish) {
-	  $('finishBtn').disabled = true;
-		finishQuiz();
-	  }
-	};
+    const confirmFinish = confirm("Are you sure you want to finish the quiz? You cannot return to unanswered questions.");
+    
+    if (confirmFinish) {
+    $('finishBtn').disabled = true;
+    finishQuiz();
+    }
+  };
     $('restartBtn').onclick = () => location.reload();
 $('retryBtn').onclick = async () => {
 if (state.isSubmitting || submissionLock) return;
