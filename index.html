@@ -1332,11 +1332,12 @@ state.current = Math.min(resumeIndex + 1, state.active.length - 1);
 }
 const fetched = await fetchQuestions();
 
-if (!state.active || state.active.length === 0) {
+if (!Array.isArray(state.active) || state.active.length === 0){
   state.questions = fetched.questions;
   state.active = prepareQuestions(fetched.questions, fetched.meta);
-  state.meta = fetched.meta;
+  Object.freeze(state.active);
 }
+  state.meta = fetched.meta;
 
     if (typeof fetched.meta.showAnswers === 'boolean') {
       SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
