@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxj5MpPuyFwH2qvzfvgTJi70NcIaP8_keY5b4JlhGoDzEUhWjprrvrnX3xeto14hpc/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKFXbYfr1IMgFrUH4vJd6yzmofdzlbU1GE8wuz87qsqie3CUgCfBqYkLkm1nhgh-c/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -583,22 +583,38 @@ $('markingSchemeBox').textContent =
 
 
 
-    function prepareQuestions(rawQuestions) {
-      const shuffledQuestions = shuffle(rawQuestions).map(q => {
-        const options = q.answers.map((text, idx) => ({ text, originalIndex: idx }));
-        const shuffledOptions = shuffle(options);
+    function prepareQuestions(rawQuestions, meta) {
 
-        return {
-          questionId: q.questionId,
-          question: q.question,
-          answers: shuffledOptions.map(o => o.text),
-          optionMap: shuffledOptions.map(o => o.originalIndex), // shuffled index -> original index
-          time: q.time
-        };
-      });
+  let questions = [...rawQuestions];
 
-      return shuffledQuestions;
+  // ✅ Shuffle questions ONLY if allowed
+  if (meta.shuffleQuestions) {
+    questions = shuffle(questions);
+  }
+
+  const finalQuestions = questions.map(q => {
+
+    let options = q.answers.map((text, idx) => ({
+      text,
+      originalIndex: idx
+    }));
+
+    // ✅ Shuffle options ONLY if allowed
+    if (meta.shuffleOptions) {
+      options = shuffle(options);
     }
+
+    return {
+      questionId: q.questionId,
+      question: q.question,
+      answers: options.map(o => o.text),
+      optionMap: options.map(o => o.originalIndex),
+      time: q.time
+    };
+  });
+
+  return finalQuestions;
+}
 
     function formatMs(ms) {
       const sec = Math.floor(ms / 1000);
@@ -1144,7 +1160,7 @@ $('scoreText').textContent = `${serverResult.score || '0.00'} / ${maxMarks}`;
       $('resultMeta').innerHTML = `
         <strong>Total Correct answers:</strong> ${serverResult.correctCount || 0}<br>
         <strong>Total Incorrect answers:</strong> ${serverResult.incorrectCount || 0}<br>
-        <strong>Total Unattempted:</strong> ${serverResult.unattemptedCount || 0}<br>
+        <strong>Total Unattempted:</strong> ${serverResult.skippedCount || 0}<br>
         <strong>Final Marks:</strong> ${serverResult.score || '0.00'}<br>
         <strong>Percentage:</strong> ${serverResult.percentage || '0.00'}%
       `;
@@ -1315,9 +1331,11 @@ state.current = Math.min(resumeIndex + 1, state.active.length - 1);
   }
 }
 const fetched = await fetchQuestions();
+
 if (!state.active || state.active.length === 0) {
   state.questions = fetched.questions;
-  state.active = prepareQuestions(fetched.questions);
+  state.active = prepareQuestions(fetched.questions, fetched.meta);
+  state.meta = fetched.meta;
 }
 
     if (typeof fetched.meta.showAnswers === 'boolean') {
