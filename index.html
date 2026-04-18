@@ -883,9 +883,9 @@ function paintTimer() {
 
       // Convert shuffled index back to original A/B/C/D index expected by server
       let originalSelectedIndex = -1;
-      if (selectedIndex >= 0 && q.optionMap && q.optionMap[selectedIndex] != null) {
-        originalSelectedIndex = q.optionMap[selectedIndex];
-      }
+      if (selectedIndex >= 0 && Array.isArray(q.optionMap)) {
+  originalSelectedIndex = q.optionMap[selectedIndex] ?? -1;
+}
 state.responses = state.responses.filter(r => r.questionId !== q.questionId);
 state.responses.push({
   questionId: q.questionId,
@@ -1335,6 +1335,7 @@ const fetched = await fetchQuestions();
 if (!Array.isArray(state.active) || state.active.length === 0){
   state.questions = fetched.questions;
   state.active = prepareQuestions(fetched.questions, fetched.meta);
+  state.active.forEach(q => Object.freeze(q));
   Object.freeze(state.active);
 }
   state.meta = fetched.meta;
