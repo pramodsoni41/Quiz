@@ -1317,7 +1317,7 @@ if (saved) {
 const resumeIndex = Number.isInteger(data.current) ? data.current : 0;
 
 // ✅ ALWAYS move forward on refresh
-state.current = Math.min(resumeIndex + 1, state.active.length - 1);
+state.current = Math.min(resumeIndex , state.active.length - 1);
       if (state.current < state.active.length) {
         showToast(`Resuming from Question ${state.current + 1}`);
       }
