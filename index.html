@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4Kl181102V9azz-3rFsRz9Z06fNl2lchpXGUXfIwYHhUmkcpbyaZ-Zhm5MY8hO4Z_/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYHGydlOZhhPVJhheOybWI50QPcmyi24ZkslRiR42aF1AKUs6FC5lTZyI4NHoGxw/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -465,22 +465,29 @@ button.finish-btn:hover {
     }
 
     async function postJSON(payload) {
-      const res = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(payload)
-      });
+
+      const params = new URLSearchParams();
+
+      // convert JSON to GET params
+      for (const key in payload) {
+        if (typeof payload[key] === "object") {
+          params.append(key, JSON.stringify(payload[key]));
+        } else {
+          params.append(key, payload[key]);
+        }
+      }
+
+      const url = GOOGLE_SCRIPT_URL + "?" + params.toString();
+
+      const res = await fetch(url);   // ✅ GET request
 
       const text = await res.text();
-      let data;
+
       try {
-        data = JSON.parse(text);
+        return JSON.parse(text);
       } catch (err) {
-        throw new Error("Server did not return valid JSON: " + text);
+        throw new Error("Invalid JSON: " + text);
       }
-      return data;
     }
 
     async function fetchQuizMeta() {
