@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2_CzfmaMayl-wnKxwryIOeGkhYLdHRulITXgrEvyl54_Q75HKBr4UKiok2BimXfM/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzg03qlFB4yLZekJTHBIzCDQkwzpOLY8hxJsWm8QFHv75AW6JJlMLAkGQCak45hBp0/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1226,8 +1226,8 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !phoneNo || !password)) { 
-alert('Please enter Roll No, ID No, Phone Number, and Password.');
+if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!regNo || !password)) { 
+  alert('Please enter ID No and Password.');
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
   return;
@@ -1455,13 +1455,41 @@ if (state.isSubmitting || submissionLock) return;
   }
 };
 
+function getUrlStudent() {
+  const params = new URLSearchParams(window.location.search);
 
+  return {
+    roll: (params.get("roll") || "").trim(),
+    name: (params.get("name") || "").trim()
+  };
+}
 document.addEventListener("DOMContentLoaded", async () => {
 
   setupAntiCheatListeners();
 
   await loadQuizMetaOnly();
+const urlStudent = getUrlStudent();
 
+if (urlStudent.roll) {
+  $('regNo').value = urlStudent.roll;
+
+  if (urlStudent.name) {
+    $('studentName').value = urlStudent.name;
+  }
+
+  $('studentPassword').value = "AUTO_LOGIN";
+
+  // phone can remain blank for URL quiz entry
+  if (!$('phoneNo').value) {
+    $('phoneNo').value = "NA";
+  }
+
+  setTimeout(() => {
+    $('startBtn').onclick();
+  }, 300);
+
+  return;
+}
   const savedStudent = localStorage.getItem("quiz_student");
   const savedSession = localStorage.getItem("quiz_session");
   const savedProgress = localStorage.getItem("quiz_progress");
