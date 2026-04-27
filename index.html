@@ -1567,6 +1567,9 @@ if (roll) {
 
   // ❌ DO NOT return if you want resume logic to work
 }
+const savedStudent = localStorage.getItem("quiz_student");
+const savedSession = localStorage.getItem("quiz_session");
+const savedProgress = localStorage.getItem("quiz_progress");
 const backup = localStorage.getItem("quiz_backup");
 // 🔥 AUTO-RESUBMIT if backup exists
 if (backup && savedSession) {
