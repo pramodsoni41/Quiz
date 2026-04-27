@@ -1013,6 +1013,7 @@ if (window.MathJax) {
           action: 'validateLogin',
           regNo,
           password
+          token: state.loginToken || ""
         });
       } catch (err) {
         console.error('Login validation failed:', err);
@@ -1242,12 +1243,10 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!regNo || !password)) { 
-  alert('Please enter ID No and Password.');
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-  return;
-}
+  if (!state.sessionToken && !localStorage.getItem("quiz_session") && !regNo) {
+    alert('Missing ID No');
+    return;
+  }
 
       try {
         let loginResult = null;
