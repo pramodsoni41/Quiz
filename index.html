@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQ-tCKhIxV65UXjh0zztdHKgvyYyYsYbxkEHL4CZgDcXEnOljEgCooRvjFb0F7j_M/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySRUsuTGdDAHAgF1FPsEkw8i6QesM34aFT4lnVE6HXxeKDt4eTAK6_0qnQwDs4_mg/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1419,7 +1419,7 @@ localStorage.setItem("quiz_questions", JSON.stringify(state.active));
           state.student = {
             name: loginResult.name || name,
             regNo,
-            phoneNo
+            phoneNo: loginResult.phone || phoneNo || ""
           };
       localStorage.setItem("quiz_student", JSON.stringify(state.student));
 
