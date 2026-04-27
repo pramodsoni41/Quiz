@@ -1536,36 +1536,27 @@ const phone = localStorage.getItem("student_phone") || "";
 
 if (roll) {
 
-  // ✅ Fill Roll
+  $('regNo').disabled = false;
+  $('studentName').disabled = false;
+  $('phoneNo').disabled = false;
+  $('studentPassword').disabled = false;
+
   $('regNo').value = roll;
 
-  // ✅ Fill Name
   if (name) {
     $('studentName').value = name;
   }
 
-  // ✅ Fill Phone (from classroom)
   if (phone) {
     $('phoneNo').value = phone;
-  } else {
-    // allow manual if not available
-    $('phoneNo').disabled = false;
   }
 
-  // 🔐 Store token (important)
-  state.loginToken = token;
+  if (password) {
+    $('studentPassword').value = password;
+  }
 
-  // ❌ Remove password completely
-if (password) {
-  $('studentPassword').value = password;
-  $('studentPassword').disabled = false; // allow edit if needed
-}
-
-  // ✅ Instruction
   $('quizInstructions').textContent =
     "Your details are pre-filled. Click Start Quiz and enter class password.";
-
-  // ❌ DO NOT return if you want resume logic to work
 }
 const savedStudent = localStorage.getItem("quiz_student");
 const savedSession = localStorage.getItem("quiz_session");
