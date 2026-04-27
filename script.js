@@ -16,11 +16,12 @@ let state = {
   score: 0,
   responses: [],
   timer: null,
-  timeLeft: 0
+  timeLeft: 0,
+  selected: null
 };
 
 // ==========================
-// JSONP (CORS FIX)
+// JSONP (CORS SAFE)
 // ==========================
 function fetchJSONP(url) {
   return new Promise((resolve, reject) => {
@@ -35,7 +36,7 @@ function fetchJSONP(url) {
 
     const script = document.createElement("script");
     script.src = url + "&callback=" + cb;
-    script.onerror = reject;
+    script.onerror = () => reject("Network error");
 
     document.body.appendChild(script);
   });
@@ -66,13 +67,14 @@ async function fetchQuestions() {
 
   const data = await fetchJSONP(url);
 
-  if (data.status !== "ok") throw new Error("Question load failed");
+  if (data.status !== "ok") {
+    throw new Error("Failed to load questions: " + data.status);
+  }
 
   return data.questions.map(q => ({
     id: q.questionId,
     text: q.question,
     options: [q.options.A, q.options.B, q.options.C, q.options.D],
-    correct: q.correctAnswer,
     time: Number(q.time) || 15
   }));
 }
@@ -85,6 +87,10 @@ function showSection(id) {
   $(id).classList.remove("hidden");
 }
 
+function showError(msg) {
+  alert(msg); // you can upgrade to UI later
+}
+
 // ==========================
 // LOAD META
 // ==========================
@@ -95,15 +101,9 @@ async function loadMeta() {
     $("quizTitle").textContent = meta.quizName || "Quiz";
     $("quizIntro").textContent = "Enter details and start quiz";
 
-    $("studentName").disabled = false;
-    $("regNo").disabled = false;
-    $("phoneNo").disabled = false;
-    $("studentPassword").disabled = false;
-    $("startBtn").disabled = false;
-    $("startBtn").textContent = "Start Quiz";
-
   } catch (err) {
-    $("quizTitle").textContent = "Quiz could not load";
+    $("quizTitle").textContent = "Quiz not available";
+    console.error(err);
   }
 }
 
@@ -117,22 +117,50 @@ $("startBtn").onclick = async () => {
   const phone = $("phoneNo").value.trim();
   const password = $("studentPassword").value.trim();
 
-  if (!name || !regNo || !password) {
-    alert("Enter details");
+  if (!regNo || !password) {
+    showError("Enter Roll No and Password");
     return;
   }
 
   try {
     const login = await validateLogin(regNo, password);
 
-    if (login.status !== "ok") {
-      alert("Invalid login");
+    console.log("LOGIN RESPONSE:", login);
+
+    // 🔴 DETAILED ERROR HANDLING
+    if (login.status === "invalid") {
+      showError("❌ Invalid Roll Number or Password");
       return;
     }
 
+    if (login.status === "used") {
+      showError("⚠️ You have already attempted the quiz");
+      return;
+    }
+
+    if (login.status === "closed") {
+      showError("❌ Quiz is not open");
+      return;
+    }
+
+    if (login.status === "expired") {
+      showError("⏰ Quiz time is over");
+      return;
+    }
+
+    if (login.status !== "ok") {
+      showError("❌ Login failed: " + login.status);
+      return;
+    }
+
+    // ✅ SUCCESS
     state.sessionToken = login.sessionToken;
 
-    state.student = { name, regNo, phone };
+    state.student = {
+      name: login.name || name,
+      regNo,
+      phone: login.phone || phone
+    };
 
     state.questions = await fetchQuestions();
 
@@ -144,7 +172,8 @@ $("startBtn").onclick = async () => {
     renderQuestion();
 
   } catch (err) {
-    alert("Cannot start quiz");
+    console.error(err);
+    showError("Server error. Try again.");
   }
 };
 
@@ -152,6 +181,8 @@ $("startBtn").onclick = async () => {
 // RENDER QUESTION
 // ==========================
 function renderQuestion() {
+
+  state.selected = null;
 
   const q = state.questions[state.current];
 
@@ -184,6 +215,7 @@ function renderQuestion() {
 // SELECT ANSWER
 // ==========================
 function selectAnswer(index) {
+
   state.selected = index;
 
   document.querySelectorAll(".answer").forEach(b => b.classList.remove("selected"));
@@ -217,20 +249,9 @@ function nextQuestion(selectedIndex) {
 
   clearInterval(state.timer);
 
-  const q = state.questions[state.current];
-
-  let correct = false;
-
-  if (selectedIndex !== -1) {
-    correct = (q.options[selectedIndex] === q.correct);
-  }
-
-  if (correct) state.score++;
-
   state.responses.push({
-    question: q.text,
-    selected: selectedIndex,
-    correct: q.correct
+    questionId: "Q" + (state.current + 1),
+    selectedIndex: selectedIndex
   });
 
   state.current++;
@@ -247,7 +268,7 @@ function nextQuestion(selectedIndex) {
 // ==========================
 $("submitAnswerBtn").onclick = () => {
   if (state.selected == null) {
-    alert("Select answer");
+    showError("Select an answer");
     return;
   }
   nextQuestion(state.selected);
@@ -260,17 +281,17 @@ $("finishBtn").onclick = () => {
 };
 
 // ==========================
-// RESULT
+// RESULT (NO SUBMIT YET)
 // ==========================
 function finishQuiz() {
 
   showSection("result");
 
   $("scoreText").textContent =
-    `${state.score} / ${state.questions.length}`;
+    `Completed`;
 
   $("resultMeta").textContent =
-    `You scored ${state.score} out of ${state.questions.length}`;
+    `Quiz submitted successfully`;
 }
 
 // ==========================
@@ -279,7 +300,7 @@ function finishQuiz() {
 document.addEventListener("DOMContentLoaded", () => {
   loadMeta();
 
-  // autofill from dashboard
+  // Autofill (optional)
   const roll = localStorage.getItem("student_roll");
   const name = localStorage.getItem("student_name");
   const phone = localStorage.getItem("student_phone");
