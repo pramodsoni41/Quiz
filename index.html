@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKFXbYfr1IMgFrUH4vJd6yzmofdzlbU1GE8wuz87qsqie3CUgCfBqYkLkm1nhgh-c/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNXgfsR2yWr_IBuhYE8aWZvOteGNhZBoSoz2ZhKdsCfgnkkSFkTu9Ma2M9KbSvbqeY/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1456,6 +1456,7 @@ if (state.isSubmitting || submissionLock) return;
 };
 
 function fillStudentFromDashboard() {
+
   const roll =
     localStorage.getItem("roll") ||
     localStorage.getItem("student_roll");
@@ -1463,6 +1464,10 @@ function fillStudentFromDashboard() {
   const name =
     localStorage.getItem("name") ||
     localStorage.getItem("student_name");
+
+  const phone =
+    localStorage.getItem("student_phone") ||
+    localStorage.getItem("phone");
 
   if (!roll) {
     alert("Please login from dashboard first.");
@@ -1472,16 +1477,13 @@ function fillStudentFromDashboard() {
 
   $("studentName").value = name || "Student";
   $("regNo").value = roll;
-
-  // If quiz password is same as roll number
   $("studentPassword").value = roll;
-
-  // Phone is not available from dashboard, so keep blank
-  $("phoneNo").value = "";
+  $("phoneNo").value = phone || "";
 
   $("studentName").readOnly = true;
   $("regNo").readOnly = true;
   $("studentPassword").readOnly = true;
+  $("phoneNo").readOnly = true;
 
   return true;
 }
