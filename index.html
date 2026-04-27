@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFWTlGwD1b_Kr56LAiuYSik3r7y5V3f0ovHWo0um8fmM05W2SFyYw9XUKawa0BTPc/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWwRzBuHxuhSyOWnXozhBA34CbSwMnn2M0Y-kN80MgPr8C0FeqCGa4Nt22xtNWrlU/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1013,7 +1013,6 @@ if (window.MathJax) {
           action: 'validateLogin',
           regNo,
           password,
-          token: state.loginToken || ""
         });
       } catch (err) {
         console.error('Login validation failed:', err);
@@ -1253,11 +1252,10 @@ if (savedSession && !state.sessionToken) {
 
 // ✅ Skip login if resuming
 if (!state.sessionToken || (regNo && password)) {
-  loginResult = await postJSON({
+loginResult = await postJSON({
   action: 'validateLogin',
   regNo,
-  password,
-  token: state.loginToken
+  password
 });
 } else {
   loginResult = { status: 'ok', name: 'Student' };  // dummy
@@ -1531,7 +1529,7 @@ const params = new URLSearchParams(window.location.search);
 
 const roll = params.get("roll") || "";
 const name = params.get("name") || "";
-const token = params.get("token") || "";
+const password = params.get("password") || "";
 
 // 🔹 Read phone from classroom storage
 const phone = localStorage.getItem("student_phone") || "";
@@ -1558,8 +1556,10 @@ if (roll) {
   state.loginToken = token;
 
   // ❌ Remove password completely
-  $('studentPassword').value = "********";
-  $('studentPassword').disabled = true;
+if (password) {
+  $('studentPassword').value = password;
+  $('studentPassword').disabled = false; // allow edit if needed
+}
 
   // ✅ Instruction
   $('quizInstructions').textContent =
