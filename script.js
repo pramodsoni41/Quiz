@@ -1,7 +1,7 @@
 // ==========================
 // CONFIG
 // ==========================
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCx01nVO1vxXuZvujT2N5aZOzvHAXGSOHzEG9ix-y_wS8Wqza1YhuhKxXOoi7ek9Y/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB60JD3kk3z35f5zHDQ7AKrddF2saHoJMqqDtLeQdB3_nFImu6ygM87SFSCys0L9U/exec";
 
 const $ = (id) => document.getElementById(id);
 
