@@ -1567,7 +1567,7 @@ if (roll) {
 
   // ❌ DO NOT return if you want resume logic to work
 }
-
+const backup = localStorage.getItem("quiz_backup");
 // 🔥 AUTO-RESUBMIT if backup exists
 if (backup && savedSession) {
   state.sessionToken = savedSession;
