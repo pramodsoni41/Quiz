@@ -1558,8 +1558,8 @@ if (roll) {
   state.loginToken = token;
 
   // ❌ Remove password completely
-  $('studentPassword').value = "";
-  $('studentPassword').parentElement.style.display = "none";
+  $('studentPassword').value = "********";
+  $('studentPassword').disabled = true;
 
   // ✅ Instruction
   $('quizInstructions').textContent =
