@@ -1012,7 +1012,7 @@ if (window.MathJax) {
         return await postJSON({
           action: 'validateLogin',
           regNo,
-          password
+          password,
           token: state.loginToken || ""
         });
       } catch (err) {
