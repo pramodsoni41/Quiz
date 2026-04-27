@@ -465,29 +465,22 @@ button.finish-btn:hover {
     }
 
     async function postJSON(payload) {
-
-      const params = new URLSearchParams();
-
-      // convert JSON to GET params
-      for (const key in payload) {
-        if (typeof payload[key] === "object") {
-          params.append(key, JSON.stringify(payload[key]));
-        } else {
-          params.append(key, payload[key]);
-        }
-      }
-
-      const url = GOOGLE_SCRIPT_URL + "?" + params.toString();
-
-      const res = await fetch(url);   // ✅ GET request
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(payload)
+      });
 
       const text = await res.text();
-
+      let data;
       try {
-        return JSON.parse(text);
+        data = JSON.parse(text);
       } catch (err) {
-        throw new Error("Invalid JSON: " + text);
+        throw new Error("Server did not return valid JSON: " + text);
       }
+      return data;
     }
 
     async function fetchQuizMeta() {
@@ -1233,8 +1226,8 @@ if (savedSession && !state.sessionToken) {
       const phoneNo = $('phoneNo').value.trim();
       const password = $('studentPassword').value.trim();
 
-if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !password)) {
-alert('Student details missing. Please login again from dashboard.');
+if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!name || !regNo || !phoneNo || !password)) { 
+alert('Please enter Roll No, ID No, Phone Number, and Password.');
   $('loadingOverlay').classList.add('hidden');
   $('startBtn').disabled = false;
   return;
@@ -1462,45 +1455,13 @@ if (state.isSubmitting || submissionLock) return;
   }
 };
 
-function fillStudentFromDashboard() {
 
-  const roll =
-    localStorage.getItem("roll") ||
-    localStorage.getItem("student_roll");
-
-  const name =
-    localStorage.getItem("name") ||
-    localStorage.getItem("student_name");
-
-  const phone =
-    localStorage.getItem("student_phone") ||
-    localStorage.getItem("phone");
-
-  if (!roll) {
-    alert("Please login from dashboard first.");
-    window.location.href = "index.html";
-    return false;
-  }
-
-  $("studentName").value = name || "Student";
-  $("regNo").value = roll;
-  $("studentPassword").value = roll;
-  $("phoneNo").value = phone || "";
-
-  $("studentName").readOnly = true;
-  $("regNo").readOnly = true;
-  $("studentPassword").readOnly = true;
-  $("phoneNo").readOnly = true;
-
-  return true;
-}
 document.addEventListener("DOMContentLoaded", async () => {
 
   setupAntiCheatListeners();
 
   await loadQuizMetaOnly();
-const ok = fillStudentFromDashboard();
-  if (!ok) return;
+
   const savedStudent = localStorage.getItem("quiz_student");
   const savedSession = localStorage.getItem("quiz_session");
   const savedProgress = localStorage.getItem("quiz_progress");
