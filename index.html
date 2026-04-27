@@ -1254,7 +1254,12 @@ if (!state.sessionToken && !localStorage.getItem("quiz_session") && (!regNo || !
 
 // ✅ Skip login if resuming
 if (!state.sessionToken || (regNo && password)) {
-  loginResult = await validateStudentLogin(regNo, password);
+  loginResult = await postJSON({
+  action: 'validateLogin',
+  regNo,
+  password,
+  token: state.loginToken
+});
 } else {
   loginResult = { status: 'ok', name: 'Student' };  // dummy
 }
@@ -1530,7 +1535,9 @@ if (urlStudent.roll) {
     $('studentName').value = urlStudent.name;
   }
 
-  $('studentPassword').value = "AUTO_LOGIN";
+ const params = new URLSearchParams(window.location.search);
+
+state.loginToken = params.get("token") || "";
 
   // phone can remain blank for URL quiz entry
   if (!$('phoneNo').value) {
