@@ -416,7 +416,7 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzg03qlFB4yLZekJTHBIzCDQkwzpOLY8hxJsWm8QFHv75AW6JJlMLAkGQCak45hBp0/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzsmF-llnmUF6md27ynkENGp_myjAOxXpGCnMm_0TtrzWEKBwGp9k22gg1N_oE_v4/exec";
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -1051,7 +1051,23 @@ async function sendResultToGoogleSheet(resultObj) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+async function askClassPassword() {
+  let savedPass = localStorage.getItem("quiz_class_password") || "";
 
+  const entered = prompt("Enter Class Password to Start Quiz:");
+
+  if (!entered) {
+    alert("Class password required");
+    return false;
+  }
+
+  if (entered !== savedPass) {
+    alert("Incorrect Class Password");
+    return false;
+  }
+
+  return true;
+}
 async function finishQuiz() {
 
   // ✅ 1. Recover student
@@ -1330,7 +1346,29 @@ state.current = Math.min(resumeIndex , state.active.length - 1);
     localStorage.removeItem("quiz_progress");
   }
 }
-const fetched = await fetchQuestions();
+let fetched;
+
+try {
+  fetched = await fetchQuestions();
+} catch (err) {
+  console.log("Offline mode activated");
+
+  const savedQ = localStorage.getItem("quiz_questions");
+  const savedMeta = localStorage.getItem("quiz_class_password");
+
+  if (!savedQ) {
+    alert("No internet and no saved quiz data.");
+    return;
+  }
+
+  state.active = JSON.parse(savedQ);
+  state.classPassword = savedMeta || "";
+
+  fetched = {
+    questions: state.active,
+    meta: {}
+  };
+}
 
 if (!Array.isArray(state.active) || state.active.length === 0){
   state.questions = fetched.questions;
@@ -1339,7 +1377,11 @@ if (!Array.isArray(state.active) || state.active.length === 0){
   Object.freeze(state.active);
 }
   state.meta = fetched.meta;
+  state.classPassword = fetched.meta.classPassword || "";
 
+// Save offline
+localStorage.setItem("quiz_class_password", state.classPassword);
+localStorage.setItem("quiz_questions", JSON.stringify(state.active));
     if (typeof fetched.meta.showAnswers === 'boolean') {
       SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
     }
@@ -1389,14 +1431,25 @@ if (!Array.isArray(state.active) || state.active.length === 0){
           state.antiCheat.started = true;
           state.antiCheat.leftScreen = false;
   $('loadingOverlay').classList.add('hidden');
-          showSection('quiz');
-          updateAntiCheatPanel();
-          await enterQuizFullscreen();
-      if (state.current >= state.active.length) {
+const ok = await askClassPassword();
+
+if (!ok) {
+  $('loadingOverlay').classList.add('hidden');
+  $('startBtn').disabled = false;
+  return;
+}
+
+// ✅ Start quiz
+showSection('quiz');
+updateAntiCheatPanel();
+await enterQuizFullscreen();
+
+if (state.current >= state.active.length) {
   finishQuiz();
   return;
 }
-          renderQuestion();
+
+renderQuestion();
         }
 
       } catch (err) {
