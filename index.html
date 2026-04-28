@@ -1052,16 +1052,21 @@ async function sendResultToGoogleSheet(resultObj) {
         .replace(/'/g, '&#039;');
     }
 async function askClassPassword() {
-  let savedPass = localStorage.getItem("quiz_class_password") || "";
+  const savedPass = (localStorage.getItem("quiz_class_password") || "").trim();
+
+  // ✅ If no class password set in Config sheet → skip asking
+  if (!savedPass) {
+    return true;
+  }
 
   const entered = prompt("Enter Class Password to Start Quiz:");
 
-  if (!entered) {
+  if (entered === null) {
     alert("Class password required");
     return false;
   }
 
-  if (entered !== savedPass) {
+  if (entered.trim() !== savedPass) {
     alert("Incorrect Class Password");
     return false;
   }
