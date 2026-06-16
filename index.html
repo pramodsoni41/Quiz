@@ -329,33 +329,35 @@ button.finish-btn:hover {
       <p class="muted" id="quizIntro">Fetching quiz from server...</p>
       <p class="muted" id="quizDue"></p>
 
-  <div class="notice" id="quizInstructions">
-    Enter your details and login password to begin.
-  </div>
+  <div class="notice hidden" id="quizInstructions"></div>
 
   <div class="notice" id="markingSchemeBox">
     Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
   </div>
 
-      <div class="grid2">
-        <div>
-          <label for="studentName">Name.</label>
-          <input id="studentName" placeholder="Enter Name." disabled />
+      <!-- Login fields are hidden: the student is already authenticated on the classroom portal.
+           These inputs stay in the DOM (used internally) but are never shown. -->
+      <div id="studentFields" class="hidden">
+        <div class="grid2">
+          <div>
+            <label for="studentName">Name.</label>
+            <input id="studentName" placeholder="Enter Name." disabled />
+          </div>
+          <div>
+            <label for="regNo">ID No</label>
+            <input id="regNo" placeholder="Enter ID number" disabled />
+          </div>
         </div>
-        <div>
-          <label for="regNo">ID No</label>
-          <input id="regNo" placeholder="Enter ID number" disabled />
-        </div>
-      </div>
 
-      <div class="grid2" style="margin-top:12px;">
-        <div>
-          <label for="phoneNo">Phone No</label>
-<input id="phoneNo" placeholder="Enter Phone Number (Required)" disabled />
-        </div>
-        <div>
-          <label for="studentPassword">Password</label>
-          <input id="studentPassword" type="text" placeholder="Enter password" disabled />
+        <div class="grid2" style="margin-top:12px;">
+          <div>
+            <label for="phoneNo">Phone No</label>
+            <input id="phoneNo" placeholder="Enter Phone Number (Required)" disabled />
+          </div>
+          <div>
+            <label for="studentPassword">Password</label>
+            <input id="studentPassword" type="text" placeholder="Enter password" disabled />
+          </div>
         </div>
       </div>
 
@@ -416,7 +418,23 @@ button.finish-btn:hover {
   <script>
     const $ = (id) => document.getElementById(id);
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzkioQKxt9F2HU6PpW_OEqCFeLMrON5CSvU7psOAZ4qhuydKYecEn7WZ6fHGvPQlQ/exec";
+    // ⚠️ Set this to the UNIFIED CLASSROOM backend /exec URL after you deploy AppsScript.merged.gs
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2oqaCD2Hmpkvf3jFNlb5IAnjKIeE3LAM_aN43w9EU_1zrnDC8dJXY0Itjh15jYjh7/exec";
+
+    // Which quiz to run (from ?quiz=<QuizId>)
+    const QUIZ_ID = (new URLSearchParams(window.location.search).get("quiz") || "").trim();
+    let QUIZ_META = null;
+
+    // The student is already authenticated on the classroom portal (same domain).
+    // Read that session from shared localStorage — NO credentials come from the URL.
+    const AUTH = (() => {
+      const sessionToken = localStorage.getItem("student_session_token") || "";
+      const roll         = localStorage.getItem("student_roll")          || "";
+      const password     = localStorage.getItem("student_pass")          || "";
+      const name         = localStorage.getItem("student_name")          || "";
+      const phone        = localStorage.getItem("student_phone")         || "";
+      return { sessionToken, roll, password, name, phone, ok: !!(sessionToken || (roll && password)) };
+    })();
 
     let SHOW_INSTANT_FEEDBACK = false;   // safer default
     let SHOW_CORRECT_ANSWER = false;     // safer default
@@ -521,62 +539,72 @@ if (data.status === 'expired') {
 
 async function loadQuizMetaOnly() {
   try {
-    const meta = await fetchQuizMeta();
+    if (!QUIZ_ID) {
+      $('quizTitle').textContent = "Quiz not specified";
+      $('quizIntro').textContent = "Please open this quiz from your Classroom portal.";
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = "Unavailable";
+      return;
+    }
 
-    if (meta.quizName) $('quizTitle').textContent = meta.quizName;
-    $('quizIntro').textContent = 'Enter your details and login password to begin.';
+    const data = await postJSON({ action: 'getQuizMeta', quizId: QUIZ_ID });
+    if (data.status !== 'ok' || !data.meta) {
+      $('quizTitle').textContent = "Quiz could not load";
+      $('quizIntro').textContent = data.message || "Please refresh the page.";
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = "Unavailable";
+      return;
+    }
 
-    // ✅ DEADLINE BLOCK
+    const meta = data.meta;
+    QUIZ_META = meta;
+
+    // Title + marks come from the CLASSROOM QuizConfig (via backend), not a Master Quiz sheet
+    $('quizTitle').textContent = meta.quizName || "Quiz";
+
+    if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) CORRECT_MARKS = meta.correctMarks;
+    if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) INCORRECT_MARKS = meta.incorrectMarks;
+    $('markingSchemeBox').textContent =
+      `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
+
     if (meta.dueDate) {
       const dueTime = new Date(meta.dueDate).getTime();
-      const nowTime = Date.now();
-
       if (Number.isFinite(dueTime)) {
-        const formatted = new Date(dueTime).toLocaleString('en-IN', {
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        });
-
-        $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-
-        if (nowTime > dueTime) {
-          $('quizIntro').textContent = 'Login closed. Deadline has passed.';
-          $('studentName').disabled = true;
-          $('regNo').disabled = true;
-          $('phoneNo').disabled = true;
-          $('studentPassword').disabled = true;
-          $('startBtn').disabled = true;
-          $('startBtn').textContent = 'Login Closed';
-          return;
-        }
+        $('quizDue').innerHTML = `<strong>Due Date:</strong> ` +
+          new Date(dueTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
       }
     }
 
-// ✅ SET from meta FIRST
-if (typeof meta.correctMarks === 'number' && !isNaN(meta.correctMarks)) {
-  CORRECT_MARKS = meta.correctMarks;
-}
-if (typeof meta.incorrectMarks === 'number' && !isNaN(meta.incorrectMarks)) {
-  INCORRECT_MARKS = meta.incorrectMarks;
-}
+    // Status gate (status computed server-side from QuizConfig)
+    if (meta.status !== 'OPEN') {
+      $('quizIntro').textContent =
+        meta.status === 'UPCOMING' ? 'This quiz has not opened yet.' :
+        meta.status === 'EXPIRED'  ? 'This quiz is closed — the deadline has passed.' :
+                                     'This quiz is currently closed.';
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = meta.status === 'UPCOMING' ? 'Not Open Yet' : 'Closed';
+      return;
+    }
 
-// ✅ THEN update UI
-$('markingSchemeBox').textContent =
-  `Marking scheme: +${CORRECT_MARKS} for correct, ${INCORRECT_MARKS} for incorrect, 0 for unattempted.`;
-   
+    // Must be logged into the classroom portal
+    if (!AUTH.ok) {
+      $('quizIntro').textContent = 'Please open this quiz from your Classroom portal (you must be logged in).';
+      $('startBtn').disabled = true;
+      $('startBtn').textContent = 'Login Required';
+      return;
+    }
 
-    // ✅ ENABLE INPUTS
-    $('studentName').disabled = false;
-    $('regNo').disabled = false;
-    $('phoneNo').disabled = false;
-    $('studentPassword').disabled = false;
+    $('quizIntro').textContent = meta.needsClassPassword
+      ? 'Click Start Quiz, then enter the class password your instructor shows.'
+      : 'Click Start Quiz to begin.';
     $('startBtn').disabled = false;
     $('startBtn').textContent = "Start Quiz";
 
   } catch (err) {
     console.error('Could not load quiz metadata:', err);
     $('quizTitle').textContent = "Quiz could not load";
-    $('quizInstructions').textContent = "Please refresh the page.";
+    $('quizIntro').textContent = "Please refresh the page.";
+    $('startBtn').disabled = true;
   }
 }
     
@@ -1229,245 +1257,176 @@ rows.forEach((review, i) => {
     }
 
     $('startBtn').onclick = async () => {
-  
-  const savedSession = localStorage.getItem("quiz_session");
 
-if (savedSession && !state.sessionToken) {
-  state.sessionToken = savedSession;
-}
-  // 🔒 Disable button immediately
-  $('startBtn').disabled = true;
-    $('retryBtn').classList.add('hidden');
+      const savedSession = localStorage.getItem("quiz_session");
+      if (savedSession && !state.sessionToken) state.sessionToken = savedSession;
 
-  // 🔒 Show loading overlay
-  $('loadingOverlay').classList.remove('hidden');
-  $('loadingOverlay').querySelector('.loadingText').textContent = "Starting Quiz...";
-      const name = $('studentName').value.trim();
-      const regNo = $('regNo').value.trim();
-      const phoneNo = $('phoneNo').value.trim();
-      const password = $('studentPassword').value.trim();
-
-  if (!state.sessionToken && !localStorage.getItem("quiz_session") && !regNo) {
-    alert('Missing ID No');
-    return;
-  }
+      $('startBtn').disabled = true;
+      $('retryBtn').classList.add('hidden');
+      $('loadingOverlay').classList.remove('hidden');
+      $('loadingOverlay').querySelector('.loadingText').textContent = "Starting Quiz...";
 
       try {
-        let loginResult = null;
+        // ── Are we RESUMING an in-progress attempt? (refresh mid-quiz)
+        const resuming = !!(state.sessionToken && localStorage.getItem("quiz_progress"));
 
-// ✅ Skip login if resuming
-if (!state.sessionToken || (regNo && password)) {
-loginResult = await postJSON({
-  action: 'validateLogin',
-  regNo,
-  password
-});
-} else {
-  loginResult = { status: 'ok', name: 'Student' };  // dummy
-}
-        console.log('loginResult =', loginResult);
+        // ── FRESH START: trust the classroom login + verify class password server-side
+        if (!resuming) {
+          if (!AUTH.ok) {
+            $('loadingOverlay').classList.add('hidden');
+            alert("Please open this quiz from your Classroom portal (you must be logged in).");
+            $('startBtn').disabled = false;
+            return;
+          }
 
-        if (loginResult.status === 'used' && !ALLOW_MULTIPLE_ATTEMPTS) {
-          alert('You have already attempted this quiz. Multiple attempts are not allowed.');
+          // Ask the class password if this quiz needs one (verified by the server)
+          let classPassword = "";
+          if (QUIZ_META && QUIZ_META.needsClassPassword) {
+            $('loadingOverlay').classList.add('hidden');
+            const entered = prompt("Enter the Class Password to start the quiz:");
+            if (entered === null) { $('startBtn').disabled = false; return; }
+            classPassword = entered.trim();
+            $('loadingOverlay').classList.remove('hidden');
+          }
+
+          const start = await postJSON({
+            action: 'startQuiz',
+            quizId: QUIZ_ID,
+            sessionToken: AUTH.sessionToken,
+            roll: AUTH.roll,
+            password: AUTH.password,
+            classPassword: classPassword
+          });
+
+          const stop = (msg) => { $('loadingOverlay').classList.add('hidden'); alert(msg); $('startBtn').disabled = false; };
+
+          if (start.status === 'badpass')      return stop('Incorrect class password.');
+          if (start.status === 'used')         return stop('You have already attempted this quiz.');
+          if (start.status === 'upcoming')     return stop('This quiz has not opened yet.');
+          if (start.status === 'expired')      return stop('This quiz is closed — the deadline has passed.');
+          if (start.status === 'closed')       return stop('This quiz is currently closed.');
+          if (start.status === 'unauthorized') return stop('Session expired. Please log in again on the Classroom portal.');
+          if (start.status !== 'ok')           return stop('Unable to start quiz: ' + (start.message || start.status));
+
+          state.sessionToken = start.sessionToken;
+          localStorage.setItem("quiz_session", state.sessionToken);
+
+          state.student = { name: start.name, regNo: AUTH.roll, phoneNo: start.phone || "" };
+          localStorage.setItem("quiz_student", JSON.stringify(state.student));
+
+          // brand new attempt — drop any stale progress
+          state.current = 0;
+          state.responses = [];
+          state.active = [];
+          localStorage.removeItem("quiz_progress");
+          localStorage.removeItem("quiz_refresh_count");
+        }
+
+        // ── Refresh-loop guard
+        let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
+        refreshCount += 1;
+        localStorage.setItem("quiz_refresh_count", refreshCount);
+        if (refreshCount > 8) {
+          alert("Maximum refresh attempts exceeded. Submitting quiz.");
+          const saved = localStorage.getItem("quiz_progress");
+          if (saved) {
+            const data = JSON.parse(saved);
+            state.responses = data.responses || [];
+            state.active = Array.isArray(data.active) ? data.active : [];
+          }
+          finishQuiz();
+          return;
+        }
+
+        // ── Restore saved progress if it belongs to this session
+        const saved = localStorage.getItem("quiz_progress");
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            if (data.sessionToken === state.sessionToken) {
+              state.responses = data.responses || [];
+              state.active = Array.isArray(data.active) ? data.active : [];
+              const resumeIndex = Number.isInteger(data.current) ? data.current : 0;
+              state.current = Math.min(resumeIndex, state.active.length - 1);
+              if (state.current < state.active.length) {
+                showToast(`Resuming from Question ${state.current + 1}`);
+              }
+            } else {
+              localStorage.removeItem("quiz_progress");
+            }
+          } catch (e) {
+            localStorage.removeItem("quiz_progress");
+          }
+        }
+
+        // ── Load questions (server uses the quiz session to know which quiz)
+        let fetched;
+        try {
+          fetched = await fetchQuestions();
+        } catch (err) {
+          console.log("Offline mode activated");
+          const savedQ = localStorage.getItem("quiz_questions");
+          if (!savedQ) {
+            alert("No internet and no saved quiz data.");
+            $('loadingOverlay').classList.add('hidden');
+            $('startBtn').disabled = false;
+            return;
+          }
+          state.active = JSON.parse(savedQ);
+          fetched = { questions: state.active, meta: {} };
+        }
+
+        if (!Array.isArray(state.active) || state.active.length === 0) {
+          state.questions = fetched.questions;
+          state.active = prepareQuestions(fetched.questions, fetched.meta);
+          state.active.forEach(q => Object.freeze(q));
+          Object.freeze(state.active);
+        }
+        state.meta = fetched.meta;
+
+        // Save offline copy of questions
+        localStorage.setItem("quiz_questions", JSON.stringify(state.active));
+
+        if (typeof fetched.meta.showAnswers === 'boolean')         SHOW_CORRECT_ANSWER     = fetched.meta.showAnswers;
+        if (typeof fetched.meta.showInstantFeedback === 'boolean') SHOW_INSTANT_FEEDBACK   = fetched.meta.showInstantFeedback;
+        if (typeof fetched.meta.showSummary === 'boolean')         SHOW_RESULT_TABLE       = fetched.meta.showSummary;
+        if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks))     CORRECT_MARKS   = fetched.meta.correctMarks;
+        if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) INCORRECT_MARKS = fetched.meta.incorrectMarks;
+
+        if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
+
+        // Recover student if it was lost on refresh
+        if (!state.student) {
+          const ss = localStorage.getItem("quiz_student");
+          if (ss) state.student = JSON.parse(ss);
+        }
+
+        state.isSubmitting = false;
+        state.questionViolationHandled = false;
+        state.antiCheat.hiddenCount = 0;
+        state.antiCheat.blurCount = 0;
+        state.antiCheat.fullscreenExitCount = 0;
+        state.antiCheat.awayStart = null;
+        state.antiCheat.totalAwayMs = 0;
+        state.antiCheat.log = [];
+        state.antiCheat.started = true;
+        state.antiCheat.leftScreen = false;
+
         $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-          return;
-        }
-        if (loginResult.status === 'closed') {
-          alert('Quiz is currently closed.');
-      $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-          return;
-        }
-      if (loginResult.status === 'expired') {
-  alert('Login closed. Deadline has passed.');
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-  return;
-}
-        if (loginResult.status === 'invalid') {
-          alert('Invalid registration number or password.');
-      $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-          return;
-        }
+        showSection('quiz');
+        updateAntiCheatPanel();
+        await enterQuizFullscreen();
 
-        if (loginResult.status === 'ok' || (loginResult.status === 'used' && ALLOW_MULTIPLE_ATTEMPTS)) {
-          if (loginResult.sessionToken) {
-  state.sessionToken = loginResult.sessionToken;
-}
-      localStorage.setItem("quiz_session", state.sessionToken);
-      // reset
-if (!localStorage.getItem("quiz_progress")) {
-  state.current = 0;
-  state.responses = [];
-  
-  // ❌ do NOT touch state.active here
-}
-
-let refreshCount = Number(localStorage.getItem("quiz_refresh_count") || 0);
-refreshCount += 1;
-localStorage.setItem("quiz_refresh_count", refreshCount);
-if (refreshCount > 5) {
-  alert("Maximum refresh attempts exceeded. Submitting quiz.");
-
-  state.sessionToken = localStorage.getItem("quiz_session");
-
-  const saved = localStorage.getItem("quiz_progress");
- 
-
- if (saved) {
-    const data = JSON.parse(saved);
-    state.responses = data.responses || [];
-    state.active = Array.isArray(data.active) ? data.active : [];
-  }
-
-  finishQuiz();
-  return;
-}
-const saved = localStorage.getItem("quiz_progress");
-
-
-if (saved) {
-  try {
-    const data = JSON.parse(saved);
-
-    if (data.sessionToken === state.sessionToken) {
-
-      state.responses = data.responses || [];
-      state.active = Array.isArray(data.active) ? data.active : [];
-
-const resumeIndex = Number.isInteger(data.current) ? data.current : 0;
-
-// ✅ ALWAYS move forward on refresh
-state.current = Math.min(resumeIndex , state.active.length - 1);
-      if (state.current < state.active.length) {
-        showToast(`Resuming from Question ${state.current + 1}`);
-      }
-
-    } else {
-      localStorage.removeItem("quiz_progress");
-    }
-
-  } catch (e) {
-    localStorage.removeItem("quiz_progress");
-  }
-}
-let fetched;
-
-try {
-  fetched = await fetchQuestions();
-} catch (err) {
-  console.log("Offline mode activated");
-
-  const savedQ = localStorage.getItem("quiz_questions");
-  const savedMeta = localStorage.getItem("quiz_class_password");
-
-  if (!savedQ) {
-    alert("No internet and no saved quiz data.");
-    return;
-  }
-
-  state.active = JSON.parse(savedQ);
-  state.classPassword = savedMeta || "";
-
-  fetched = {
-    questions: state.active,
-    meta: {}
-  };
-}
-
-if (!Array.isArray(state.active) || state.active.length === 0){
-  state.questions = fetched.questions;
-  state.active = prepareQuestions(fetched.questions, fetched.meta);
-  state.active.forEach(q => Object.freeze(q));
-  Object.freeze(state.active);
-}
-  state.meta = fetched.meta;
-  state.classPassword = fetched.meta.classPassword || "";
-
-// Save offline
-localStorage.setItem("quiz_class_password", state.classPassword);
-localStorage.setItem("quiz_questions", JSON.stringify(state.active));
-    if (typeof fetched.meta.showAnswers === 'boolean') {
-      SHOW_CORRECT_ANSWER = fetched.meta.showAnswers;
-    }
-    if (typeof fetched.meta.showInstantFeedback === 'boolean') {
-      SHOW_INSTANT_FEEDBACK = fetched.meta.showInstantFeedback;
-    }
-    if (typeof fetched.meta.showSummary === 'boolean') {
-      SHOW_RESULT_TABLE = fetched.meta.showSummary;
-    }
-    if (typeof fetched.meta.correctMarks === 'number' && !isNaN(fetched.meta.correctMarks)) {
-      CORRECT_MARKS = fetched.meta.correctMarks;
-    }
-    if (typeof fetched.meta.incorrectMarks === 'number' && !isNaN(fetched.meta.incorrectMarks)) {
-      INCORRECT_MARKS = fetched.meta.incorrectMarks;
-    }
-
-      
-      
-          if (fetched.meta.quizName) $('quizTitle').textContent = fetched.meta.quizName;
-          if (fetched.meta.dueDate) {
-  const due = new Date(fetched.meta.dueDate);
-  const formatted = due.toLocaleString('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  });
-  $('quizDue').innerHTML = `<strong>Due Date:</strong> ${formatted}`;
-}
-          $('quizInstructions').textContent =  fetched.meta.instructions || 'Enter your details and login password to begin.';
-
-          state.student = {
-            name: loginResult.name || name,
-            regNo,
-            phoneNo: loginResult.phone || phoneNo || ""
-          };
-      localStorage.setItem("quiz_student", JSON.stringify(state.student));
-
-          
-          state.isSubmitting = false;
-          state.questionViolationHandled = false;
-
-          state.antiCheat.hiddenCount = 0;
-          state.antiCheat.blurCount = 0;
-          state.antiCheat.fullscreenExitCount = 0;
-          state.antiCheat.awayStart = null;
-          state.antiCheat.totalAwayMs = 0;
-          state.antiCheat.log = [];
-          state.antiCheat.started = true;
-          state.antiCheat.leftScreen = false;
-  $('loadingOverlay').classList.add('hidden');
-const ok = await askClassPassword();
-
-if (!ok) {
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-  return;
-}
-
-// ✅ Start quiz
-showSection('quiz');
-updateAntiCheatPanel();
-await enterQuizFullscreen();
-
-if (state.current >= state.active.length) {
-  finishQuiz();
-  return;
-}
-
-
-renderQuestion();
-        }
+        if (state.current >= state.active.length) { finishQuiz(); return; }
+        renderQuestion();
 
       } catch (err) {
-  console.error(err);
-  state.sessionToken = null;
-  alert('Unable to start quiz.');
-  $('loadingOverlay').classList.add('hidden');
-  $('startBtn').disabled = false;
-}
-    
+        console.error(err);
+        state.sessionToken = null;
+        alert('Unable to start quiz.');
+        $('loadingOverlay').classList.add('hidden');
+        $('startBtn').disabled = false;
+      }
     };
 
    document.addEventListener("DOMContentLoaded", () => {
@@ -1528,102 +1487,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setupAntiCheatListeners();
 
-await loadQuizMetaOnly();
+  await loadQuizMetaOnly();
 
-// 🔹 Read URL params
-const params = new URLSearchParams(window.location.search);
-
-const roll      = params.get("roll")      || "";
-const name      = params.get("name")      || "";
-const password  = params.get("password")  || "";
-const phone     = params.get("phone")     || "";
-const autostart = params.get("autostart") === "1";
-
-// Coming from classroom portal with verified class password — suppress quiz-level prompt
-if (autostart) {
-  localStorage.removeItem("quiz_class_password");
-}
-
-if (roll) {
-
-  $('regNo').disabled = false;
-  $('studentName').disabled = false;
-  $('phoneNo').disabled = false;
-  $('studentPassword').disabled = false;
-
-  $('regNo').value = roll;
-
-  if (name) {
-    $('studentName').value = name;
+  // Pre-fill the (hidden) identity fields from the classroom session so internal
+  // references stay valid. No credentials ever come from the URL.
+  if (AUTH.ok) {
+    $('regNo').value = AUTH.roll || "";
+    $('studentName').value = AUTH.name || "";
+    $('phoneNo').value = AUTH.phone || "";
   }
 
-  if (phone) {
-    $('phoneNo').value = phone;
-  }
+  const savedStudent  = localStorage.getItem("quiz_student");
+  const savedSession   = localStorage.getItem("quiz_session");
+  const savedProgress  = localStorage.getItem("quiz_progress");
+  const backup         = localStorage.getItem("quiz_backup");
 
-  if (password) {
-    $('studentPassword').value = password;
-  }
-
-  $('quizInstructions').textContent =
-    "Your details are pre-filled. Click Start Quiz and enter class password.";
-}
-const savedStudent = localStorage.getItem("quiz_student");
-const savedSession = localStorage.getItem("quiz_session");
-const savedProgress = localStorage.getItem("quiz_progress");
-const backup = localStorage.getItem("quiz_backup");
-// 🔥 AUTO-RESUBMIT if backup exists
-if (backup && savedSession) {
-  state.sessionToken = savedSession;
-
-  const resultObj = JSON.parse(backup);
-
-  // restore student if needed
-  if (!state.student && resultObj.student) {
-    state.student = resultObj.student;
-  }
-
-  // restore responses if needed
-  if ((!state.responses || state.responses.length === 0) && resultObj.responses) {
-    state.responses = resultObj.responses;
-  }
-
-  finishQuiz();
-  return;
-}
-  // ✅ FIRST restore student
-  if (savedStudent) {
-    state.student = JSON.parse(savedStudent);
-
-    $('studentName').value = state.student.name || '';
-    $('regNo').value = state.student.regNo || '';
-    $('phoneNo').value = state.student.phoneNo || '';
-  }
-
-  // ❗ THEN check finished quiz
-  if (savedProgress) {
-    const data = JSON.parse(savedProgress);
-
-    if (Array.isArray(data.active) && data.current >= data.active.length) {
-      state.sessionToken = savedSession;   // ✅ ADD THIS
-      finishQuiz();
-      return;
+  // 🔥 AUTO-RESUBMIT if a failed submission is sitting in backup
+  if (backup && savedSession) {
+    state.sessionToken = savedSession;
+    const resultObj = JSON.parse(backup);
+    if (!state.student && resultObj.student) state.student = resultObj.student;
+    if ((!state.responses || state.responses.length === 0) && resultObj.responses) {
+      state.responses = resultObj.responses;
     }
+    finishQuiz();
+    return;
   }
 
-  // ✅ normal resume
-if (savedSession && savedProgress) {
-  state.sessionToken = savedSession;
+  // Restore student object from a prior in-progress attempt
+  if (savedStudent) {
+    try {
+      state.student = JSON.parse(savedStudent);
+      $('studentName').value = state.student.name || '';
+      $('regNo').value = state.student.regNo || '';
+      $('phoneNo').value = state.student.phoneNo || '';
+    } catch (_) {}
+  }
 
-  $('setup').classList.add('hidden');
+  // If a finished attempt is sitting in progress, show its result
+  if (savedProgress) {
+    try {
+      const data = JSON.parse(savedProgress);
+      if (Array.isArray(data.active) && data.current >= data.active.length) {
+        state.sessionToken = savedSession;
+        finishQuiz();
+        return;
+      }
+    } catch (_) {}
+  }
 
-  $('loadingOverlay').classList.remove('hidden');
-  $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
-
-  setTimeout(() => {
-    $('startBtn').onclick();
-  }, 0);
-}
+  // Resume an in-progress attempt after a refresh
+  if (savedSession && savedProgress) {
+    state.sessionToken = savedSession;
+    $('setup').classList.add('hidden');
+    $('loadingOverlay').classList.remove('hidden');
+    $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
+    setTimeout(() => { $('startBtn').onclick(); }, 0);
+  }
 
 });
 
