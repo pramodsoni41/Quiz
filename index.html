@@ -1533,10 +1533,16 @@ await loadQuizMetaOnly();
 // 🔹 Read URL params
 const params = new URLSearchParams(window.location.search);
 
-const roll = params.get("roll") || "";
-const name = params.get("name") || "";
-const password = params.get("password") || "";
-const phone = params.get("phone") || "";
+const roll      = params.get("roll")      || "";
+const name      = params.get("name")      || "";
+const password  = params.get("password")  || "";
+const phone     = params.get("phone")     || "";
+const autostart = params.get("autostart") === "1";
+
+// Coming from classroom portal with verified class password — suppress quiz-level prompt
+if (autostart) {
+  localStorage.removeItem("quiz_class_password");
+}
 
 if (roll) {
 

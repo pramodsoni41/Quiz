@@ -3,8 +3,18 @@
 // ==========================
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxys3QtG-IWlpW4K9bBRUhZXt-uzarOnmi9m59C1PXdWxTvd0Gkf2ITDoo6nDKkp2Q/exec";
 
-// Which quiz tab to load — set via ?sheet=TabName in the URL
-const QUIZ_SHEET = new URLSearchParams(window.location.search).get("sheet") || "Questions";
+// Parse URL params passed from classroom portal
+const _p = new URLSearchParams(window.location.search);
+const QUIZ_SHEET    = _p.get("sheet")     || "Questions";
+const QUIZ_NAME     = _p.get("quizName")  || "";
+const QUIZ_CORRECT  = _p.get("correct")   || "";
+const QUIZ_NEGATIVE = _p.get("negative")  || "";
+const QUIZ_CLOSE    = _p.get("closeDate") || "";
+// Credentials passed from classroom portal
+const URL_ROLL      = _p.get("roll")      || "";
+const URL_PASS      = _p.get("password")  || "";
+const URL_NAME      = _p.get("name")      || "";
+const URL_PHONE     = _p.get("phone")     || "";
 
 const $ = (id) => document.getElementById(id);
 
@@ -98,12 +108,22 @@ function showError(msg) {
 // LOAD META
 // ==========================
 async function loadMeta() {
+  // Use quiz details from classroom URL params if available
+  if (QUIZ_NAME) {
+    $("quizTitle").textContent = QUIZ_NAME;
+    let info = "";
+    if (QUIZ_CORRECT) info += `+${QUIZ_CORRECT} correct`;
+    if (QUIZ_NEGATIVE && Number(QUIZ_NEGATIVE) !== 0) info += `, ${QUIZ_NEGATIVE} wrong`;
+    if (QUIZ_CLOSE) info += ` · Closes: ${QUIZ_CLOSE}`;
+    $("quizIntro").textContent = info || "Click Start Quiz to begin";
+    return;
+  }
+
+  // Fallback: load from Config sheet
   try {
     const meta = await fetchQuizMeta();
-
     $("quizTitle").textContent = meta.quizName || "Quiz";
     $("quizIntro").textContent = "Enter details and start quiz";
-
   } catch (err) {
     $("quizTitle").textContent = "Quiz not available";
     console.error(err);
@@ -300,23 +320,29 @@ function finishQuiz() {
 // ==========================
 // INIT
 // ==========================
-document.addEventListener("DOMContentLoaded", () => {
-  loadMeta();
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadMeta();
 
-  // Autofill (optional)
-  const roll = localStorage.getItem("student_roll");
-  const name = localStorage.getItem("student_name");
-  const phone = localStorage.getItem("student_phone");
+  // Use URL params first (from classroom portal), then fall back to localStorage
+  const roll     = URL_ROLL  || localStorage.getItem("student_roll")  || "";
+  const name     = URL_NAME  || localStorage.getItem("student_name")  || "";
+  const phone    = URL_PHONE || localStorage.getItem("student_phone") || "";
+  const password = URL_PASS  || localStorage.getItem("student_pass")  || "";
 
   if (roll) {
-    $("regNo").value = roll;
-    $("studentName").value = name || "";
-    $("phoneNo").value = phone || "";
-    $("studentPassword").value = roll;
+    $("regNo").value           = roll;
+    $("studentName").value     = name;
+    $("phoneNo").value         = phone;
+    $("studentPassword").value = password;
 
-    $("regNo").readOnly = true;
-    $("studentName").readOnly = true;
-    $("phoneNo").readOnly = true;
+    $("regNo").readOnly           = true;
+    $("studentName").readOnly     = true;
+    $("phoneNo").readOnly         = true;
     $("studentPassword").readOnly = true;
+
+    // Auto-start: student is already logged in via classroom portal
+    if (password) {
+      $("startBtn").click();
+    }
   }
 });
