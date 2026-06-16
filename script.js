@@ -1,7 +1,10 @@
 // ==========================
 // CONFIG
 // ==========================
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxC6_JEJGKzBl2_CVUPhicbeNIk14qt_MxfQFko8ykpEHOABLGMEjaSV2-efJUNZdI/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxys3QtG-IWlpW4K9bBRUhZXt-uzarOnmi9m59C1PXdWxTvd0Gkf2ITDoo6nDKkp2Q/exec";
+
+// Which quiz tab to load — set via ?sheet=TabName in the URL
+const QUIZ_SHEET = new URLSearchParams(window.location.search).get("sheet") || "Questions";
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,7 +49,7 @@ function fetchJSONP(url) {
 // API CALLS
 // ==========================
 async function fetchQuizMeta() {
-  const url = GOOGLE_SCRIPT_URL + "?action=getQuizMeta";
+  const url = GOOGLE_SCRIPT_URL + `?action=getQuizMeta&sheet=${encodeURIComponent(QUIZ_SHEET)}`;
   const data = await fetchJSONP(url);
 
   if (data.status !== "ok") throw new Error("Meta load failed");
@@ -56,14 +59,14 @@ async function fetchQuizMeta() {
 
 async function validateLogin(regNo, password) {
   const url = GOOGLE_SCRIPT_URL +
-    `?action=validateLogin&regNo=${encodeURIComponent(regNo)}&password=${encodeURIComponent(password)}`;
+    `?action=validateLogin&regNo=${encodeURIComponent(regNo)}&password=${encodeURIComponent(password)}&sheet=${encodeURIComponent(QUIZ_SHEET)}`;
 
   return await fetchJSONP(url);
 }
 
 async function fetchQuestions() {
   const url = GOOGLE_SCRIPT_URL +
-    `?action=getQuestions&sessionToken=${state.sessionToken}`;
+    `?action=getQuestions&sessionToken=${state.sessionToken}&sheet=${encodeURIComponent(QUIZ_SHEET)}`;
 
   const data = await fetchJSONP(url);
 
