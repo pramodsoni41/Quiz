@@ -1543,6 +1543,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     $('loadingOverlay').classList.remove('hidden');
     $('loadingOverlay').querySelector('.loadingText').textContent = "Resuming Quiz...";
     setTimeout(() => { $('startBtn').onclick(); }, 0);
+    return;
+  }
+
+  // Auto-trigger start for classroom-logged-in students:
+  // If AUTH is valid and quiz is open, immediately prompt for class password (or start directly)
+  if (AUTH.ok && QUIZ_META && QUIZ_META.status === 'OPEN' && !$('startBtn').disabled && !savedSession) {
+    setTimeout(() => { $('startBtn').onclick(); }, 500);
   }
 
 });
