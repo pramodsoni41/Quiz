@@ -359,10 +359,6 @@ button.finish-btn:hover {
         </p>
       </div>
 
-      <div id="offlineBadge" class="hidden notice" style="margin-top:12px;background:#fef3c7;border-color:#fcd34d;color:#92400e;">
-        ⚡ Quiz loaded from cache — internet not required to start.
-      </div>
-
       <div class="row">
         <button id="startBtn" disabled>Loading Quiz...</button>
       </div>
@@ -599,11 +595,6 @@ async function loadQuizMetaOnly() {
       $('quizIntro').textContent = 'Enter the class password shown by your instructor, then click Start Quiz.';
     } else {
       $('quizIntro').textContent = 'Click Start Quiz to begin.';
-    }
-
-    // Show offline badge if questions are already cached
-    if (localStorage.getItem("quiz_questions")) {
-      $('offlineBadge').classList.remove('hidden');
     }
 
     $('startBtn').disabled = false;
@@ -1399,7 +1390,6 @@ rows.forEach((review, i) => {
 
         // Save offline copy of questions — next visit works without internet
         localStorage.setItem("quiz_questions", JSON.stringify(state.active));
-        $('offlineBadge').classList.remove('hidden');
 
         if (typeof fetched.meta.showAnswers === 'boolean')         SHOW_CORRECT_ANSWER     = fetched.meta.showAnswers;
         if (typeof fetched.meta.showInstantFeedback === 'boolean') SHOW_INSTANT_FEEDBACK   = fetched.meta.showInstantFeedback;
