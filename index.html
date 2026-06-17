@@ -335,33 +335,33 @@ button.finish-btn:hover {
     Marking scheme: *** for correct, *** for incorrect, 0 for unattempted.
   </div>
 
-      <!-- Login fields are hidden: the student is already authenticated on the classroom portal.
-           These inputs stay in the DOM (used internally) but are never shown. -->
+      <!-- Hidden identity fields (internal use only) -->
       <div id="studentFields" class="hidden">
         <div class="grid2">
-          <div>
-            <label for="studentName">Name.</label>
-            <input id="studentName" placeholder="Enter Name." disabled />
-          </div>
-          <div>
-            <label for="regNo">ID No</label>
-            <input id="regNo" placeholder="Enter ID number" disabled />
-          </div>
+          <div><label>Name</label><input id="studentName" disabled /></div>
+          <div><label>ID No</label><input id="regNo" disabled /></div>
         </div>
-
         <div class="grid2" style="margin-top:12px;">
-          <div>
-            <label for="phoneNo">Phone No</label>
-            <input id="phoneNo" placeholder="Enter Phone Number (Required)" disabled />
-          </div>
-          <div>
-            <label for="studentPassword">Password</label>
-            <input id="studentPassword" type="text" placeholder="Enter password" disabled />
-          </div>
+          <div><label>Phone</label><input id="phoneNo" disabled /></div>
+          <div><label>Password</label><input id="studentPassword" type="text" disabled /></div>
         </div>
       </div>
 
+      <!-- Shown when quiz needs a class password -->
+      <div id="classPasswordSection" class="hidden" style="margin-top:16px;">
+        <label for="classPasswordInput" style="font-weight:600;color:#1e293b;font-size:0.95rem;">
+          🔑 Class Password
+        </label>
+        <input id="classPasswordInput" type="text" placeholder="Enter the password shown by your instructor"
+               autocomplete="off" style="margin-top:6px;" />
+        <p class="muted" style="font-size:0.88rem;margin:6px 0 0;">
+          Your instructor will display this on the board.
+        </p>
+      </div>
 
+      <div id="offlineBadge" class="hidden notice" style="margin-top:12px;background:#fef3c7;border-color:#fcd34d;color:#92400e;">
+        ⚡ Quiz loaded from cache — internet not required to start.
+      </div>
 
       <div class="row">
         <button id="startBtn" disabled>Loading Quiz...</button>
@@ -594,9 +594,18 @@ async function loadQuizMetaOnly() {
       return;
     }
 
-    $('quizIntro').textContent = meta.needsClassPassword
-      ? 'Click Start Quiz, then enter the class password your instructor shows.'
-      : 'Click Start Quiz to begin.';
+    if (meta.needsClassPassword) {
+      $('classPasswordSection').classList.remove('hidden');
+      $('quizIntro').textContent = 'Enter the class password shown by your instructor, then click Start Quiz.';
+    } else {
+      $('quizIntro').textContent = 'Click Start Quiz to begin.';
+    }
+
+    // Show offline badge if questions are already cached
+    if (localStorage.getItem("quiz_questions")) {
+      $('offlineBadge').classList.remove('hidden');
+    }
+
     $('startBtn').disabled = false;
     $('startBtn').textContent = "Start Quiz";
 
@@ -1279,14 +1288,18 @@ rows.forEach((review, i) => {
             return;
           }
 
-          // Ask the class password if this quiz needs one (verified by the server)
+          // Read class password from the inline field (no prompt())
           let classPassword = "";
           if (QUIZ_META && QUIZ_META.needsClassPassword) {
-            $('loadingOverlay').classList.add('hidden');
-            const entered = prompt("Enter the Class Password to start the quiz:");
-            if (entered === null) { $('startBtn').disabled = false; return; }
-            classPassword = entered.trim();
-            $('loadingOverlay').classList.remove('hidden');
+            classPassword = ($('classPasswordInput').value || "").trim();
+            if (!classPassword) {
+              $('loadingOverlay').classList.add('hidden');
+              $('classPasswordInput').focus();
+              $('classPasswordInput').style.borderColor = "#dc2626";
+              $('startBtn').disabled = false;
+              return;
+            }
+            $('classPasswordInput').style.borderColor = "";
           }
 
           const start = await postJSON({
@@ -1384,8 +1397,9 @@ rows.forEach((review, i) => {
         }
         state.meta = fetched.meta;
 
-        // Save offline copy of questions
+        // Save offline copy of questions — next visit works without internet
         localStorage.setItem("quiz_questions", JSON.stringify(state.active));
+        $('offlineBadge').classList.remove('hidden');
 
         if (typeof fetched.meta.showAnswers === 'boolean')         SHOW_CORRECT_ANSWER     = fetched.meta.showAnswers;
         if (typeof fetched.meta.showInstantFeedback === 'boolean') SHOW_INSTANT_FEEDBACK   = fetched.meta.showInstantFeedback;
@@ -1430,6 +1444,11 @@ rows.forEach((review, i) => {
     };
 
    document.addEventListener("DOMContentLoaded", () => {
+
+  // Enter key on class password field triggers start
+  $('classPasswordInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !$('startBtn').disabled) $('startBtn').onclick();
+  });
 
   $('submitAnswerBtn').onclick = () => {
     if (state.selectedIndex === null) {
