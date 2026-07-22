@@ -478,15 +478,40 @@ button.finish-btn:hover {
       return a;
     }
 
+    /* GET/JSONP — used for getQuizMeta, startQuiz, getQuestions.
+       Google Apps Script 302-redirects POST → GET (body lost), so these
+       actions are sent as URL params instead. submitQuiz stays as POST. */
+    function quizGet(params) {
+      return new Promise((resolve, reject) => {
+        const cb = 'qcb_' + Date.now();
+        const qs = Object.entries({ ...params, callback: cb })
+          .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v ?? ''))
+          .join('&');
+        const script = document.createElement('script');
+        const timer = setTimeout(() => {
+          delete window[cb]; script.remove();
+          reject(new Error('timeout'));
+        }, 15000);
+        window[cb] = (data) => {
+          clearTimeout(timer); delete window[cb]; script.remove();
+          resolve(data);
+        };
+        script.onerror = () => {
+          clearTimeout(timer); delete window[cb]; script.remove();
+          reject(new Error('network'));
+        };
+        script.src = GOOGLE_SCRIPT_URL + '?' + qs;
+        document.body.appendChild(script);
+      });
+    }
+
+    /* POST — only for submitQuiz (large response body) */
     async function postJSON(payload) {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-
       const text = await res.text();
       let data;
       try {
@@ -543,7 +568,7 @@ async function loadQuizMetaOnly() {
       return;
     }
 
-    const data = await postJSON({ action: 'getQuizMeta', quizId: QUIZ_ID });
+    const data = await quizGet({ action: 'getQuizMeta', quizId: QUIZ_ID });
     if (data.status !== 'ok' || !data.meta) {
       $('quizTitle').textContent = "Quiz could not load";
       $('quizIntro').textContent = data.message || "Please refresh the page.";
