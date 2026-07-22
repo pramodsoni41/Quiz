@@ -1555,10 +1555,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Auto-trigger start for classroom-logged-in students:
-  // If AUTH is valid and quiz is open, immediately prompt for class password (or start directly)
-  if (AUTH.ok && QUIZ_META && QUIZ_META.status === 'OPEN' && !$('startBtn').disabled && !savedSession) {
-    setTimeout(() => { $('startBtn').onclick(); }, 500);
+  // Auto-trigger start only when no class password is needed.
+  // Also check button is still enabled at fire time to avoid racing with a manual click.
+  if (AUTH.ok && QUIZ_META && QUIZ_META.status === 'OPEN' && !QUIZ_META.needsClassPassword && !$('startBtn').disabled && !savedSession) {
+    setTimeout(() => { if (!$('startBtn').disabled) $('startBtn').onclick(); }, 500);
   }
 
 });
