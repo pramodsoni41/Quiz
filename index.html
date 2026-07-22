@@ -1368,16 +1368,16 @@ rows.forEach((review, i) => {
         try {
           fetched = await fetchQuestions();
         } catch (err) {
-          console.log("Offline mode activated");
           const savedQ = localStorage.getItem("quiz_questions");
           if (!savedQ) {
-            alert("No internet and no saved quiz data.");
             $('loadingOverlay').classList.add('hidden');
             $('startBtn').disabled = false;
+            $('quizIntro').style.color = '#dc2626';
+            $('quizIntro').textContent = '⚠️ Could not reach server. Check your internet connection and try again.';
             return;
           }
           state.active = JSON.parse(savedQ);
-          fetched = { questions: state.active, meta: {} };
+          fetched = { questions: state.active, meta: QUIZ_META || {} };
         }
 
         if (!Array.isArray(state.active) || state.active.length === 0) {
