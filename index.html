@@ -538,8 +538,15 @@ if (data.status === 'expired') {
   $('startBtn').disabled = false;
   throw new Error('Quiz expired');
 }
+      if (data.status === 'unauthorized') {
+        const e = new Error('Session expired. Please log in again on the Classroom portal.');
+        e.isServerError = true;
+        throw e;
+      }
       if (data.status !== 'ok') {
-        throw new Error(data.message || JSON.stringify(data));
+        const e = new Error(data.message || JSON.stringify(data));
+        e.isServerError = true;
+        throw e;
       }
 
       const questions = (data.questions || []).map(q => ({
@@ -1390,6 +1397,17 @@ rows.forEach((review, i) => {
         try {
           fetched = await fetchQuestions();
         } catch (err) {
+          // Server responded with a real error (missing sheet, expired session, …) — show it
+          if (err && err.isServerError) {
+            $('loadingOverlay').classList.add('hidden');
+            $('startBtn').disabled = false;
+            $('quizIntro').style.color = '#dc2626';
+            $('quizIntro').textContent = '⚠️ ' + err.message;
+            return;
+          }
+          if (err && err.message === 'Quiz expired') return;
+
+          // True network failure — try the offline cache
           const savedQ = localStorage.getItem("quiz_questions");
           if (!savedQ) {
             $('loadingOverlay').classList.add('hidden');
@@ -1589,7 +1607,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener('copy', e => e.preventDefault());
     document.addEventListener('cut', e => e.preventDefault());
     document.addEventListener('selectstart', e => {
-      if (e.target.closest('.nocopy')) e.preventDefault();
+      if (e.target && e.target.closest && e.target.closest('.nocopy')) e.preventDefault();
     });
 
     document.addEventListener('keydown', e => {
