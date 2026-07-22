@@ -415,7 +415,7 @@ button.finish-btn:hover {
     const $ = (id) => document.getElementById(id);
 
     // ⚠️ Set this to the UNIFIED CLASSROOM backend /exec URL after you deploy AppsScript.merged.gs
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQq2JgtG4vofsKwfe_VhyHrW50Fpx5zoKAsqE702jMF6bS3c1Irz_bQKAPKr5Gdpc6/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX_AU0Q6_i7Fv0lHaLoseyNrumhRY_dce23ARaBOPTYMd53fhRKBXbbY94bSEYSuyH/exec";
 
     // Which quiz to run (from ?quiz=<QuizId>)
     const QUIZ_ID = (new URLSearchParams(window.location.search).get("quiz") || "").trim();
@@ -531,10 +531,7 @@ button.finish-btn:hover {
     }
 
     async function fetchQuestions() {
-      const data = await postJSON({
-        action: 'getQuestions',
-        sessionToken: state.sessionToken
-      });
+      const data = await quizGet({ action: 'getQuestions', sessionToken: state.sessionToken });
 if (data.status === 'expired') {
   alert('Quiz cannot be started. Deadline has passed.');
   $('loadingOverlay').classList.add('hidden');
@@ -1318,7 +1315,7 @@ rows.forEach((review, i) => {
             $('classPasswordInput').style.borderColor = "";
           }
 
-          const start = await postJSON({
+          const start = await quizGet({
             action: 'startQuiz',
             quizId: QUIZ_ID,
             sessionToken: AUTH.sessionToken,
