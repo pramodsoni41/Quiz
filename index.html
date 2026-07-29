@@ -1536,6 +1536,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setupAntiCheatListeners();
 
+  /* ── CRITICAL: quiz-namespace guard ──────────────────────────────
+     All quiz_* localStorage state (session, cached questions, progress,
+     backup) belongs to ONE quiz. If the stored state is for a DIFFERENT
+     quiz than the one in the URL, wipe it — otherwise a failed getQuestions
+     could load the previous quiz's cached questions and the server would
+     score those answers against THIS quiz's key. */
+  (function guardQuizNamespace() {
+    const storedId = localStorage.getItem("quiz_active_id");
+    if (storedId && storedId !== QUIZ_ID) {
+      ["quiz_session", "quiz_progress", "quiz_student", "quiz_questions",
+       "quiz_backup", "quiz_refresh_count"].forEach(k => localStorage.removeItem(k));
+    }
+    if (QUIZ_ID) localStorage.setItem("quiz_active_id", QUIZ_ID);
+  })();
+
   await loadQuizMetaOnly();
 
   // Pre-fill the (hidden) identity fields from the classroom session so internal
