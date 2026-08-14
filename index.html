@@ -1008,8 +1008,15 @@ function showToast(msg) {
         paintTimer();
         if (state.timeLeft <= 0) {
           clearInterval(state.timer);
-          state.currentQuestionReason = 'timed_out';
-          recordAndContinue(-1, true);
+          // If the student had already selected an option, count it as their
+          // answer even though time expired — don't treat it as a skip.
+          if (state.selectedIndex !== null && state.selectedIndex >= 0) {
+            state.currentQuestionReason = 'answered';
+            recordAndContinue(state.selectedIndex, false);
+          } else {
+            state.currentQuestionReason = 'timed_out';
+            recordAndContinue(-1, true);
+          }
         }
       }, 1000);
     }
