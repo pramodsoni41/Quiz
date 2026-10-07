@@ -1086,24 +1086,27 @@ if (window.MathJax) {
     }
 
 async function sendResultToGoogleSheet(resultObj) {
+  // Retry the submit several times: a brief network blip or an Apps Script
+  // redirect hiccup kills one attempt but is almost always gone by the next.
+  const TRIES = 4;
+  for (let attempt = 1; attempt <= TRIES; attempt++) {
+    try {
+      const res = await Promise.race([
+        postJSON({ action: 'submitQuiz', ...resultObj }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000))
+      ]);
+      if (res && res.status === 'submitted') return res;
+    } catch (err) { /* try again */ }
 
-  const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Timeout")), 20000) // 20 sec max
-  );
-
-  try {
-    const res = await Promise.race([
-      postJSON({
-        action: 'submitQuiz',
-        ...resultObj
-      }),
-      timeout
-    ]);
-
-    if (res.status === 'submitted') return res;
-
-  } catch (err) {}
-
+    if (attempt < TRIES) {
+      const overlay = $('loadingOverlay');
+      if (overlay) {
+        const t = overlay.querySelector('.loadingText');
+        if (t) t.textContent = "Submitting… retry " + attempt + " of " + (TRIES - 1);
+      }
+      await new Promise(r => setTimeout(r, 1500 * attempt));  // 1.5s, 3s, 4.5s backoff
+    }
+  }
   return { status: 'failed' };
 }
 
